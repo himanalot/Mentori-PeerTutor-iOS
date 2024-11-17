@@ -1,0 +1,657 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		C735B8BC68BCB1BF7E6ADAD8 /* Pods_PeerTutor.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 61499BCD99AAEC80DF46C0DE /* Pods_PeerTutor.framework */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		FDE31D412CE947D3007CEC3B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FDE31D282CE947D2007CEC3B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FDE31D2F2CE947D2007CEC3B;
+			remoteInfo = PeerTutor;
+		};
+		FDE31D4B2CE947D3007CEC3B /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = FDE31D282CE947D2007CEC3B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = FDE31D2F2CE947D2007CEC3B;
+			remoteInfo = PeerTutor;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		0402C8E442172974DC572EE3 /* Pods-PeerTutor.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PeerTutor.debug.xcconfig"; path = "Target Support Files/Pods-PeerTutor/Pods-PeerTutor.debug.xcconfig"; sourceTree = "<group>"; };
+		61499BCD99AAEC80DF46C0DE /* Pods_PeerTutor.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_PeerTutor.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		A9CADC490398FF6803236D02 /* Pods-PeerTutor.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-PeerTutor.release.xcconfig"; path = "Target Support Files/Pods-PeerTutor/Pods-PeerTutor.release.xcconfig"; sourceTree = "<group>"; };
+		FDE31D302CE947D2007CEC3B /* PeerTutor.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PeerTutor.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		FDE31D402CE947D3007CEC3B /* PeerTutorTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PeerTutorTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		FDE31D4A2CE947D3007CEC3B /* PeerTutorUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PeerTutorUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		FDE31D322CE947D2007CEC3B /* PeerTutor */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PeerTutor;
+			sourceTree = "<group>";
+		};
+		FDE31D432CE947D3007CEC3B /* PeerTutorTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PeerTutorTests;
+			sourceTree = "<group>";
+		};
+		FDE31D4D2CE947D3007CEC3B /* PeerTutorUITests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = PeerTutorUITests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		FDE31D2D2CE947D2007CEC3B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C735B8BC68BCB1BF7E6ADAD8 /* Pods_PeerTutor.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FDE31D3D2CE947D3007CEC3B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FDE31D472CE947D3007CEC3B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		2ACA0968CB64BEAC4DFE167F /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				61499BCD99AAEC80DF46C0DE /* Pods_PeerTutor.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		2EDBA19C2D678C8C393C0A6C /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				0402C8E442172974DC572EE3 /* Pods-PeerTutor.debug.xcconfig */,
+				A9CADC490398FF6803236D02 /* Pods-PeerTutor.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		FDE31D272CE947D2007CEC3B = {
+			isa = PBXGroup;
+			children = (
+				FDE31D322CE947D2007CEC3B /* PeerTutor */,
+				FDE31D432CE947D3007CEC3B /* PeerTutorTests */,
+				FDE31D4D2CE947D3007CEC3B /* PeerTutorUITests */,
+				FDE31D312CE947D2007CEC3B /* Products */,
+				2EDBA19C2D678C8C393C0A6C /* Pods */,
+				2ACA0968CB64BEAC4DFE167F /* Frameworks */,
+			);
+			sourceTree = "<group>";
+		};
+		FDE31D312CE947D2007CEC3B /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FDE31D302CE947D2007CEC3B /* PeerTutor.app */,
+				FDE31D402CE947D3007CEC3B /* PeerTutorTests.xctest */,
+				FDE31D4A2CE947D3007CEC3B /* PeerTutorUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		FDE31D2F2CE947D2007CEC3B /* PeerTutor */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FDE31D542CE947D3007CEC3B /* Build configuration list for PBXNativeTarget "PeerTutor" */;
+			buildPhases = (
+				1FF8840471D4BCB24A730270 /* [CP] Check Pods Manifest.lock */,
+				FDE31D2C2CE947D2007CEC3B /* Sources */,
+				FDE31D2D2CE947D2007CEC3B /* Frameworks */,
+				FDE31D2E2CE947D2007CEC3B /* Resources */,
+				8A96C4A57421DC69E33BF1D6 /* [CP] Embed Pods Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				FDE31D322CE947D2007CEC3B /* PeerTutor */,
+			);
+			name = PeerTutor;
+			productName = PeerTutor;
+			productReference = FDE31D302CE947D2007CEC3B /* PeerTutor.app */;
+			productType = "com.apple.product-type.application";
+		};
+		FDE31D3F2CE947D3007CEC3B /* PeerTutorTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FDE31D572CE947D3007CEC3B /* Build configuration list for PBXNativeTarget "PeerTutorTests" */;
+			buildPhases = (
+				FDE31D3C2CE947D3007CEC3B /* Sources */,
+				FDE31D3D2CE947D3007CEC3B /* Frameworks */,
+				FDE31D3E2CE947D3007CEC3B /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				FDE31D422CE947D3007CEC3B /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				FDE31D432CE947D3007CEC3B /* PeerTutorTests */,
+			);
+			name = PeerTutorTests;
+			productName = PeerTutorTests;
+			productReference = FDE31D402CE947D3007CEC3B /* PeerTutorTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+		FDE31D492CE947D3007CEC3B /* PeerTutorUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = FDE31D5A2CE947D3007CEC3B /* Build configuration list for PBXNativeTarget "PeerTutorUITests" */;
+			buildPhases = (
+				FDE31D462CE947D3007CEC3B /* Sources */,
+				FDE31D472CE947D3007CEC3B /* Frameworks */,
+				FDE31D482CE947D3007CEC3B /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				FDE31D4C2CE947D3007CEC3B /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				FDE31D4D2CE947D3007CEC3B /* PeerTutorUITests */,
+			);
+			name = PeerTutorUITests;
+			productName = PeerTutorUITests;
+			productReference = FDE31D4A2CE947D3007CEC3B /* PeerTutorUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		FDE31D282CE947D2007CEC3B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					FDE31D2F2CE947D2007CEC3B = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					FDE31D3F2CE947D3007CEC3B = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = FDE31D2F2CE947D2007CEC3B;
+					};
+					FDE31D492CE947D3007CEC3B = {
+						CreatedOnToolsVersion = 16.0;
+						TestTargetID = FDE31D2F2CE947D2007CEC3B;
+					};
+				};
+			};
+			buildConfigurationList = FDE31D2B2CE947D2007CEC3B /* Build configuration list for PBXProject "PeerTutor" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = FDE31D272CE947D2007CEC3B;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				FD4B6CA42CE9782300A592AA /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = FDE31D312CE947D2007CEC3B /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				FDE31D2F2CE947D2007CEC3B /* PeerTutor */,
+				FDE31D3F2CE947D3007CEC3B /* PeerTutorTests */,
+				FDE31D492CE947D3007CEC3B /* PeerTutorUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		FDE31D2E2CE947D2007CEC3B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FDE31D3E2CE947D3007CEC3B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FDE31D482CE947D3007CEC3B /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		1FF8840471D4BCB24A730270 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-PeerTutor-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		8A96C4A57421DC69E33BF1D6 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-PeerTutor/Pods-PeerTutor-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-PeerTutor/Pods-PeerTutor-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-PeerTutor/Pods-PeerTutor-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		FDE31D2C2CE947D2007CEC3B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FDE31D3C2CE947D3007CEC3B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		FDE31D462CE947D3007CEC3B /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		FDE31D422CE947D3007CEC3B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FDE31D2F2CE947D2007CEC3B /* PeerTutor */;
+			targetProxy = FDE31D412CE947D3007CEC3B /* PBXContainerItemProxy */;
+		};
+		FDE31D4C2CE947D3007CEC3B /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = FDE31D2F2CE947D2007CEC3B /* PeerTutor */;
+			targetProxy = FDE31D4B2CE947D3007CEC3B /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		FDE31D522CE947D3007CEC3B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				EXCLUDED_ARCHS = arm64;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		FDE31D532CE947D3007CEC3B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				EXCLUDED_ARCHS = arm64;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		FDE31D552CE947D3007CEC3B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = 0402C8E442172974DC572EE3 /* Pods-PeerTutor.debug.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"PeerTutor/Preview Content\"";
+				DEVELOPMENT_TEAM = FZ4WG46R7H;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				EXCLUDED_ARCHS = "";
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = arm64;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				ONLY_ACTIVE_ARCH = NO;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ishan.PeerTutor;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		FDE31D562CE947D3007CEC3B /* Release */ = {
+			isa = XCBuildConfiguration;
+			baseConfigurationReference = A9CADC490398FF6803236D02 /* Pods-PeerTutor.release.xcconfig */;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_ASSET_PATHS = "\"PeerTutor/Preview Content\"";
+				DEVELOPMENT_TEAM = FZ4WG46R7H;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_PREVIEWS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
+				EXCLUDED_ARCHS = "";
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = arm64;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ishan.PeerTutor;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		FDE31D582CE947D3007CEC3B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = FZ4WG46R7H;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ishan.PeerTutorTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PeerTutor.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PeerTutor";
+			};
+			name = Debug;
+		};
+		FDE31D592CE947D3007CEC3B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = FZ4WG46R7H;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ishan.PeerTutorTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PeerTutor.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/PeerTutor";
+			};
+			name = Release;
+		};
+		FDE31D5B2CE947D3007CEC3B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = FZ4WG46R7H;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ishan.PeerTutorUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = PeerTutor;
+			};
+			name = Debug;
+		};
+		FDE31D5C2CE947D3007CEC3B /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = FZ4WG46R7H;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.ishan.PeerTutorUITests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = PeerTutor;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		FDE31D2B2CE947D2007CEC3B /* Build configuration list for PBXProject "PeerTutor" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FDE31D522CE947D3007CEC3B /* Debug */,
+				FDE31D532CE947D3007CEC3B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FDE31D542CE947D3007CEC3B /* Build configuration list for PBXNativeTarget "PeerTutor" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FDE31D552CE947D3007CEC3B /* Debug */,
+				FDE31D562CE947D3007CEC3B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FDE31D572CE947D3007CEC3B /* Build configuration list for PBXNativeTarget "PeerTutorTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FDE31D582CE947D3007CEC3B /* Debug */,
+				FDE31D592CE947D3007CEC3B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		FDE31D5A2CE947D3007CEC3B /* Build configuration list for PBXNativeTarget "PeerTutorUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				FDE31D5B2CE947D3007CEC3B /* Debug */,
+				FDE31D5C2CE947D3007CEC3B /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCRemoteSwiftPackageReference section */
+		FD4B6CA42CE9782300A592AA /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 11.5.0;
+			};
+		};
+/* End XCRemoteSwiftPackageReference section */
+	};
+	rootObject = FDE31D282CE947D2007CEC3B /* Project object */;
+}
