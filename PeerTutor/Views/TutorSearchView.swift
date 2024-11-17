@@ -84,125 +84,130 @@ struct TutorDetailView: View {
     @State private var tutor: User?
     @State private var showingMessageSheet = false
     @State private var showingScheduleSheet = false
+    @State private var isLoading = true
     @StateObject private var chatViewModel = ChatViewModel()
     @Environment(\.dismiss) private var dismiss
     private let firebase = FirebaseManager.shared
     
     var body: some View {
-        ScrollView {
-            if let tutor = tutor {
-                VStack(spacing: 24) {
-                    // Profile Header
-                    VStack(spacing: 16) {
-                        Circle()
-                            .fill(Color(.systemGray5))
-                            .frame(width: 100, height: 100)
-                            .overlay(
-                                Text(tutor.name.prefix(1).uppercased())
-                                    .font(.title.bold())
-                                    .foregroundColor(.gray)
-                            )
-                        
-                        VStack(spacing: 8) {
-                            Text(tutor.name)
-                                .font(.title2.bold())
+        Group {
+            if isLoading {
+                ProgressView()
+            } else if let tutor = tutor {
+                ScrollView {
+                    VStack(spacing: 24) {
+                        // Profile Header
+                        VStack(spacing: 16) {
+                            Circle()
+                                .fill(Color(.systemGray5))
+                                .frame(width: 100, height: 100)
+                                .overlay(
+                                    Text(tutor.name.prefix(1).uppercased())
+                                        .font(.title.bold())
+                                        .foregroundColor(.gray)
+                                )
                             
-                            HStack(spacing: 4) {
-                                Image(systemName: "star.fill")
-                                    .foregroundColor(.yellow)
-                                Text(String(format: "%.1f", tutor.displayRating))
-                                Text("(\(tutor.displayReviews) reviews)")
+                            VStack(spacing: 8) {
+                                Text(tutor.name)
+                                    .font(.title2.bold())
+                                
+                                HStack(spacing: 4) {
+                                    Image(systemName: "star.fill")
+                                        .foregroundColor(.yellow)
+                                    Text(String(format: "%.1f", tutor.displayRating))
+                                    Text("(\(tutor.displayReviews) reviews)")
+                                        .foregroundColor(.secondary)
+                                }
+                                .font(.subheadline)
+                            }
+                        }
+                        .padding(.top)
+                        
+                        // Bio Section
+                        if !tutor.bio.isEmpty {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Label("About", systemImage: "person.text.rectangle.fill")
+                                    .font(.headline)
+                                Text(tutor.bio)
+                                    .font(.subheadline)
                                     .foregroundColor(.secondary)
                             }
-                            .font(.subheadline)
+                            .padding()
+                            .background(Color(.systemBackground))
+                            .cornerRadius(16)
+                            .shadow(color: Color.black.opacity(0.05), radius: 8)
                         }
-                    }
-                    .padding(.top)
-                    
-                    // Bio Section
-                    if !tutor.bio.isEmpty {
+                        
+                        // Subjects Grid
                         VStack(alignment: .leading, spacing: 12) {
-                            Label("About", systemImage: "person.text.rectangle.fill")
+                            Label("Subjects", systemImage: "book.fill")
                                 .font(.headline)
-                            Text(tutor.bio)
-                                .font(.subheadline)
-                                .foregroundColor(.secondary)
+                            
+                            LazyVGrid(columns: [
+                                GridItem(.flexible()),
+                                GridItem(.flexible())
+                            ], spacing: 8) {
+                                ForEach(tutor.subjects, id: \.name) { subject in
+                                    Text(subject.name)
+                                        .font(.subheadline)
+                                        .padding(.horizontal, 12)
+                                        .padding(.vertical, 8)
+                                        .frame(maxWidth: .infinity)
+                                        .background(Color.blue.opacity(0.1))
+                                        .foregroundColor(.blue)
+                                        .cornerRadius(12)
+                                }
+                            }
                         }
                         .padding()
                         .background(Color(.systemBackground))
                         .cornerRadius(16)
                         .shadow(color: Color.black.opacity(0.05), radius: 8)
-                    }
-                    
-                    // Subjects Grid
-                    VStack(alignment: .leading, spacing: 12) {
-                        Label("Subjects", systemImage: "book.fill")
-                            .font(.headline)
                         
-                        LazyVGrid(columns: [
-                            GridItem(.flexible()),
-                            GridItem(.flexible())
-                        ], spacing: 8) {
-                            ForEach(tutor.subjects, id: \.name) { subject in
-                                Text(subject.name)
-                                    .font(.subheadline)
-                                    .padding(.horizontal, 12)
-                                    .padding(.vertical, 8)
+                        // Action Buttons
+                        VStack(spacing: 12) {
+                            Button(action: {
+                                showingMessageSheet = true
+                            }) {
+                                Label("Message", systemImage: "message")
                                     .frame(maxWidth: .infinity)
-                                    .background(Color.blue.opacity(0.1))
-                                    .foregroundColor(.blue)
-                                    .cornerRadius(12)
+                                    .padding()
+                                    .background(Color.blue)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(10)
                             }
-                        }
-                    }
-                    .padding()
-                    .background(Color(.systemBackground))
-                    .cornerRadius(16)
-                    .shadow(color: Color.black.opacity(0.05), radius: 8)
-                    
-                    // Action Buttons
-                    VStack(spacing: 12) {
-                        Button(action: {
-                            showingMessageSheet = true
-                        }) {
-                            Label("Message", systemImage: "message")
-                                .frame(maxWidth: .infinity)
-                                .padding()
-                                .background(Color.blue)
-                                .foregroundColor(.white)
-                                .cornerRadius(10)
-                        }
-                        .sheet(isPresented: $showingMessageSheet) {
-                            NavigationView {
-                                ChatView(
-                                    conversation: [],
-                                    tutorName: tutor.name,
-                                    tutorId: tutorId
-                                )
-                                .onAppear {
-                                    chatViewModel.listenForMessages(tutorId: tutorId)
+                            .sheet(isPresented: $showingMessageSheet) {
+                                NavigationView {
+                                    ChatView(
+                                        conversation: [],
+                                        tutorName: tutor.name,
+                                        tutorId: tutorId
+                                    )
+                                    .onAppear {
+                                        chatViewModel.listenForMessages(tutorId: tutorId)
+                                    }
                                 }
                             }
-                        }
-                        
-                        Button(action: { showingScheduleSheet = true }) {
-                            HStack {
-                                Image(systemName: "calendar.badge.plus")
-                                Text("Schedule Session")
-                                    .fontWeight(.semibold)
+                            
+                            Button(action: { showingScheduleSheet = true }) {
+                                HStack {
+                                    Image(systemName: "calendar.badge.plus")
+                                    Text("Schedule Session")
+                                        .fontWeight(.semibold)
+                                }
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(Color.green)
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
                             }
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.green)
-                            .foregroundColor(.white)
-                            .cornerRadius(12)
                         }
+                        .padding(.horizontal)
                     }
-                    .padding(.horizontal)
+                    .padding()
                 }
-                .padding()
             } else {
-                ProgressView()
+                Text("Could not load tutor profile")
             }
         }
         .onAppear {
@@ -211,9 +216,23 @@ struct TutorDetailView: View {
     }
     
     private func loadTutor() {
+        isLoading = true
         firebase.firestore.collection("users").document(tutorId).getDocument { snapshot, error in
-            if let data = snapshot?.data() {
-                self.tutor = try? Firestore.Decoder().decode(User.self, from: data)
+            DispatchQueue.main.async {
+                if let error = error {
+                    print("Error loading tutor: \(error.localizedDescription)")
+                    self.isLoading = false
+                    return
+                }
+                
+                if let snapshot = snapshot {
+                    do {
+                        self.tutor = try snapshot.data(as: User.self)
+                    } catch {
+                        print("Error decoding tutor: \(error.localizedDescription)")
+                    }
+                }
+                self.isLoading = false
             }
         }
     }
