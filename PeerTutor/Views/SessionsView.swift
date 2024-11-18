@@ -74,7 +74,9 @@ class SessionViewModel: ObservableObject {
             .addSnapshotListener { [weak self] snapshot, error in
                 guard let documents = snapshot?.documents else { return }
                 self?.incomingRequests = documents.compactMap { document in
-                    try? document.data(as: TutoringRequest.self)
+                    var request = try? document.data(as: TutoringRequest.self)
+                    request?.documentId = document.documentID
+                    return request
                 }
             }
         
@@ -85,7 +87,9 @@ class SessionViewModel: ObservableObject {
             .addSnapshotListener { [weak self] snapshot, error in
                 guard let documents = snapshot?.documents else { return }
                 self?.outgoingRequests = documents.compactMap { document in
-                    try? document.data(as: TutoringRequest.self)
+                    var request = try? document.data(as: TutoringRequest.self)
+                    request?.documentId = document.documentID
+                    return request
                 }
             }
     }
@@ -264,7 +268,10 @@ class SessionViewModel: ObservableObject {
     }
     
     func handleRequest(_ request: TutoringRequest, approved: Bool) {
-        guard let requestId = request.documentId else { return }
+        guard let requestId = request.documentId else {
+            print("Error: Request document ID is missing for request: \(request.id)")
+            return
+        }
         
         if approved {
             // Create new session
@@ -279,8 +286,8 @@ class SessionViewModel: ObservableObject {
                 hasReview: false
             )
             
-            // First create the session
             do {
+                // First create the session
                 try firebase.firestore.collection("sessions")
                     .addDocument(from: session) { [weak self] error in
                         if let error = error {
@@ -288,12 +295,19 @@ class SessionViewModel: ObservableObject {
                             return
                         }
                         
-                        // Then delete the request
+                        // Then update request status and remove from local state
                         self?.firebase.firestore.collection("requests")
                             .document(requestId)
-                            .delete() { error in
+                            .updateData([
+                                "status": TutoringRequest.RequestStatus.approved.rawValue
+                            ]) { error in
                                 if let error = error {
-                                    print("Error deleting request: \(error.localizedDescription)")
+                                    print("Error updating request status: \(error.localizedDescription)")
+                                } else {
+                                    // Only remove from local state if update was successful
+                                    DispatchQueue.main.async {
+                                        self?.incomingRequests.removeAll { $0.id == request.id }
+                                    }
                                 }
                             }
                     }
@@ -301,12 +315,19 @@ class SessionViewModel: ObservableObject {
                 print("Error encoding session: \(error.localizedDescription)")
             }
         } else {
-            // Just delete the declined request
+            // For declined requests, update status and remove from local state
             firebase.firestore.collection("requests")
                 .document(requestId)
-                .delete() { error in
+                .updateData([
+                    "status": TutoringRequest.RequestStatus.declined.rawValue
+                ]) { [weak self] error in
                     if let error = error {
-                        print("Error deleting request: \(error.localizedDescription)")
+                        print("Error updating request status: \(error.localizedDescription)")
+                    } else {
+                        // Only remove from local state if update was successful
+                        DispatchQueue.main.async {
+                            self?.incomingRequests.removeAll { $0.id == request.id }
+                        }
                     }
                 }
         }
