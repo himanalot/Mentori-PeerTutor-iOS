@@ -191,22 +191,23 @@ class SessionViewModel: ObservableObject {
     func cancelSession(_ session: TutoringSession) {
         guard let sessionId = session.documentId else { return }
         
-        // Update the session status in Firestore
-        firebase.firestore.collection("sessions").document(sessionId).updateData([
-            "status": TutoringSession.SessionStatus.cancelled.rawValue
-        ]) { [weak self] error in
-            if let error = error {
-                print("Error cancelling session: \(error.localizedDescription)")
-                return
-            }
-            
-            // Update the local session status
-            DispatchQueue.main.async {
-                if let index = self?.sessions.firstIndex(where: { $0.documentId == sessionId }) {
-                    self?.sessions[index].status = .cancelled
+        firebase.firestore.collection("sessions")
+            .document(sessionId)
+            .updateData([
+                "status": TutoringSession.SessionStatus.cancelled.rawValue
+            ]) { [weak self] error in
+                if let error = error {
+                    print("Error cancelling session: \(error.localizedDescription)")
+                    return
+                }
+                
+                // Update the local session status
+                DispatchQueue.main.async {
+                    if let index = self?.sessions.firstIndex(where: { $0.documentId == sessionId }) {
+                        self?.sessions[index].status = .cancelled
+                    }
                 }
             }
-        }
     }
     
     func addSession(_ session: TutoringSession) {
@@ -241,7 +242,9 @@ class SessionViewModel: ObservableObject {
         
         if let documents = snapshot?.documents {
             self.sessions = documents.compactMap { document in
-                try? document.data(as: TutoringSession.self)
+                var session = try? document.data(as: TutoringSession.self)
+                session?.documentId = document.documentID
+                return session
             }
         }
     }
@@ -257,7 +260,9 @@ class SessionViewModel: ObservableObject {
         
         if let documents = snapshot?.documents {
             self.incomingRequests = documents.compactMap { document in
-                try? document.data(as: TutoringRequest.self)
+                var request = try? document.data(as: TutoringRequest.self)
+                request?.documentId = document.documentID
+                return request
             }
         }
         
@@ -268,7 +273,9 @@ class SessionViewModel: ObservableObject {
         
         if let documents = snapshotOutgoing?.documents {
             self.outgoingRequests = documents.compactMap { document in
-                try? document.data(as: TutoringRequest.self)
+                var request = try? document.data(as: TutoringRequest.self)
+                request?.documentId = document.documentID
+                return request
             }
         }
     }
@@ -301,7 +308,7 @@ class SessionViewModel: ObservableObject {
                             return
                         }
                         
-                        // Then update request status and remove from local state
+                        // Then update request status
                         self?.firebase.firestore.collection("requests")
                             .document(requestId)
                             .updateData([
@@ -396,7 +403,7 @@ struct SessionsView: View {
                                 ForEach(viewModel.pastSessions) { session in
                                     SessionRow(
                                         session: session,
-                                        tutorName: viewModel.getTutorName(for: session.tutorId),
+                                        tutorName: viewModel.getOtherPartyName(for: session),
                                         onCancel: nil,
                                         onReview: { selectedSession = session }
                                     )
@@ -463,7 +470,7 @@ struct SessionsView: View {
                                 ForEach(viewModel.sessions) { session in
                                     SessionRow(
                                         session: session,
-                                        tutorName: viewModel.getTutorName(for: session.tutorId),
+                                        tutorName: viewModel.getOtherPartyName(for: session),
                                         onCancel: { viewModel.cancelSession(session) },
                                         onReview: { selectedSession = session }
                                     )
