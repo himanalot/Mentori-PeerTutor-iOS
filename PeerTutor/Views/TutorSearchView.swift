@@ -85,7 +85,6 @@ struct TutorDetailView: View {
     @State private var showingMessageSheet = false
     @State private var showingScheduleSheet = false
     @State private var isLoading = true
-    @StateObject private var chatViewModel = ChatViewModel()
     @Environment(\.dismiss) private var dismiss
     private let firebase = FirebaseManager.shared
     
@@ -183,9 +182,6 @@ struct TutorDetailView: View {
                                         tutorName: tutor.name,
                                         tutorId: tutorId
                                     )
-                                    .onAppear {
-                                        chatViewModel.listenForMessages(tutorId: tutorId)
-                                    }
                                 }
                             }
                             
@@ -200,6 +196,9 @@ struct TutorDetailView: View {
                                 .background(Color.green)
                                 .foregroundColor(.white)
                                 .cornerRadius(12)
+                            }
+                            .sheet(isPresented: $showingScheduleSheet) {
+                                ScheduleSessionView(tutor: tutor)
                             }
                         }
                         .padding(.horizontal)

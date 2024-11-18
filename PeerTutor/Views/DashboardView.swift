@@ -522,93 +522,135 @@ struct CalendarView: View {
 struct TutoringHoursGraph: View {
     let sessions: [TutoringSession]
     @State private var animateGraph = false
+    @State private var selectedPoint: Int? = nil
+    private let firebase = FirebaseManager.shared
     
-    private var dailyHours: [(date: Date, hours: Double)] {
+    var dailyHours: [(date: Date, hours: Double)] {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        let sevenDaysAgo = calendar.date(byAdding: .day, value: -7, to: today)!
+        let sevenDaysAgo = calendar.date(byAdding: .day, value: -6, to: today)!
+        guard let currentUserId = firebase.auth.currentUser?.uid else { return [] }
         
-        var hoursByDate: [Date: Double] = [:]
-        
-        // Initialize all dates with 0 hours
-        for dayOffset in 0...7 {
-            if let date = calendar.date(byAdding: .day, value: -dayOffset, to: today) {
-                hoursByDate[calendar.startOfDay(for: date)] = 0
+        // Create array of last 7 days
+        var days: [(date: Date, hours: Double)] = []
+        for dayOffset in 0...6 {
+            if let date = calendar.date(byAdding: .day, value: dayOffset, to: sevenDaysAgo) {
+                days.append((date: date, hours: 0.0))
             }
+        }
+        
+        // Include both tutoring and learning sessions
+        let relevantSessions = sessions.filter { session in
+            session.status == .completed && 
+            (session.tutorId == currentUserId || session.studentId == currentUserId)
         }
         
         // Calculate hours for each session
-        for session in sessions {
+        for session in relevantSessions {
             let sessionDate = calendar.startOfDay(for: session.dateTime)
             if sessionDate >= sevenDaysAgo && sessionDate <= today {
-                hoursByDate[sessionDate, default: 0] += Double(session.duration) / 60.0
+                if let index = days.firstIndex(where: { calendar.isDate($0.date, inSameDayAs: sessionDate) }) {
+                    days[index].hours += Double(session.duration) / 60.0
+                }
             }
         }
         
-        return hoursByDate.map { (date: $0.key, hours: $0.value) }
-            .sorted { $0.date < $1.date }
+        return days
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Tutoring Hours - Last 7 Days")
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Weekly Hours")
                 .font(.headline)
             
-            GeometryReader { geometry in
-                Path { path in
+            if dailyHours.isEmpty {
+                Text("No tutoring activity yet")
+                    .foregroundColor(.secondary)
+                    .font(.subheadline)
+                    .padding(.vertical, 60)
+                    .frame(maxWidth: .infinity)
+            } else {
+                GeometryReader { geometry in
                     let width = geometry.size.width
-                    let height = geometry.size.height - 30 // Leave room for labels
-                    let maxHours = dailyHours.map { $0.hours }.max() ?? 1
+                    let height = geometry.size.height
+                    let maxHours = max(dailyHours.map { $0.hours }.max() ?? 0, 1)
                     
-                    // Create smooth curve through points
-                    if let first = dailyHours.first {
-                        path.move(to: CGPoint(
-                            x: 0,
-                            y: height - (height * CGFloat(first.hours) / CGFloat(maxHours))
-                        ))
-                    }
-                    
-                    for index in dailyHours.indices {
-                        let point = CGPoint(
-                            x: width * CGFloat(index) / CGFloat(dailyHours.count - 1),
-                            y: height - (height * CGFloat(dailyHours[index].hours) / CGFloat(maxHours))
-                        )
-                        
-                        if index == 0 {
-                            path.move(to: point)
-                        } else {
-                            let control1 = CGPoint(
-                                x: width * (CGFloat(index) - 0.5) / CGFloat(dailyHours.count - 1),
-                                y: height - (height * CGFloat(dailyHours[index - 1].hours) / CGFloat(maxHours))
-                            )
-                            let control2 = CGPoint(
-                                x: width * (CGFloat(index) - 0.5) / CGFloat(dailyHours.count - 1),
-                                y: height - (height * CGFloat(dailyHours[index].hours) / CGFloat(maxHours))
-                            )
-                            path.addCurve(to: point, control1: control1, control2: control2)
+                    // Background grid lines with gradient opacity
+                    VStack(spacing: height / 4) {
+                        ForEach(0..<4) { i in
+                            Rectangle()
+                                .fill(Color.gray.opacity(0.1))
+                                .frame(height: 1)
                         }
                     }
-                }
-                .trim(from: 0, to: animateGraph ? 1 : 0)
-                .stroke(Color.blue, lineWidth: 2)
-                .animation(.easeInOut(duration: 1.0), value: animateGraph)
-                
-                // Add dots for data points
-                ForEach(dailyHours.indices, id: \.self) { index in
-                    let maxHours = dailyHours.map { $0.hours }.max() ?? 1
-                    Circle()
-                        .fill(Color.blue)
-                        .frame(width: 6, height: 6)
-                        .position(
-                            x: geometry.size.width * CGFloat(index) / CGFloat(dailyHours.count - 1),
-                            y: geometry.size.height - 30 - (geometry.size.height - 30) * CGFloat(dailyHours[index].hours) / CGFloat(maxHours)
-                        )
-                        .opacity(animateGraph ? 1 : 0)
+                    
+                    // Curved graph line
+                    Path { path in
+                        let points = dailyHours.enumerated().map { index, day -> CGPoint in
+                            let x = width * CGFloat(index) / CGFloat(dailyHours.count - 1)
+                            let y = height - (height * CGFloat(day.hours) / CGFloat(maxHours))
+                            return CGPoint(x: x, y: y)
+                        }
+                        
+                        if let first = points.first {
+                            path.move(to: first)
+                            for i in 1..<points.count {
+                                let previous = points[i-1]
+                                let current = points[i]
+                                let control1 = CGPoint(x: previous.x + (current.x - previous.x) / 2, y: previous.y)
+                                let control2 = CGPoint(x: previous.x + (current.x - previous.x) / 2, y: current.y)
+                                path.addCurve(to: current, control1: control1, control2: control2)
+                            }
+                        }
+                    }
+                    .trim(from: 0, to: animateGraph ? 1 : 0)
+                    .stroke(Color.blue, style: StrokeStyle(lineWidth: 3, lineCap: .round, lineJoin: .round))
+                    
+                    // Interactive data points
+                    ForEach(dailyHours.indices, id: \.self) { index in
+                        let x = width * CGFloat(index) / CGFloat(dailyHours.count - 1)
+                        let y = height - (height * CGFloat(dailyHours[index].hours) / CGFloat(maxHours))
+                        
+                        Circle()
+                            .fill(selectedPoint == index ? Color.blue : Color.white)
+                            .frame(width: selectedPoint == index ? 12 : 8, height: selectedPoint == index ? 12 : 8)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.blue, lineWidth: 2)
+                            )
+                            .position(x: x, y: y)
+                            .opacity(animateGraph ? 1 : 0)
+                            .overlay(
+                                Group {
+                                    if selectedPoint == index {
+                                        Text(String(format: "%.1f hrs", dailyHours[index].hours))
+                                            .font(.caption)
+                                            .foregroundColor(.primary)
+                                            .padding(.horizontal, 8)
+                                            .padding(.vertical, 4)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 4)
+                                                    .fill(Color(.systemBackground))
+                                                    .shadow(radius: 2)
+                                            )
+                                            .offset(y: -24)
+                                    }
+                                }
+                            )
+                            .onTapGesture {
+                                withAnimation(.easeInOut(duration: 0.2)) {
+                                    selectedPoint = selectedPoint == index ? nil : index
+                                }
+                            }
+                    }
                 }
             }
         }
+        .frame(height: 200)
         .onAppear {
-            animateGraph = true
+            withAnimation(.easeInOut(duration: 1.5)) {
+                animateGraph = true
+            }
         }
     }
 }

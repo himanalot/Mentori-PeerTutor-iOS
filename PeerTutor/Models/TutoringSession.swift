@@ -1,6 +1,6 @@
 import Foundation
 
-struct TutoringSession: Identifiable, Codable {
+struct TutoringSession: Identifiable, Codable, Hashable {
     var id: UUID
     let tutorId: String
     let studentId: String
@@ -32,23 +32,37 @@ struct TutoringSession: Identifiable, Codable {
         case completed
         case cancelled
     }
+    
+    func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    static func == (lhs: TutoringSession, rhs: TutoringSession) -> Bool {
+        lhs.id == rhs.id
+    }
 }
 
-struct TutoringRequest: Identifiable, Codable {
-    var id: UUID
-    let tutorId: String
-    let studentId: String
-    let subject: String
-    let dateTime: Date
-    let duration: Int
-    let notes: String?
-    var status: RequestStatus
-    let isOutsideAvailability: Bool
-    let isNewSubject: Bool
-    let createdAt: Date
-    var documentId: String?
+public struct TutoringRequest: Identifiable, Codable, Hashable {
+    public var id: UUID
+    public let tutorId: String
+    public let studentId: String
+    public let subject: String
+    public let dateTime: Date
+    public let duration: Int
+    public let notes: String?
+    public var status: RequestStatus
+    public let isOutsideAvailability: Bool
+    public let isNewSubject: Bool
+    public let createdAt: Date
+    public var documentId: String?
     
-    init(id: UUID = UUID(), tutorId: String, studentId: String, subject: String, dateTime: Date, duration: Int, notes: String?, status: RequestStatus, isOutsideAvailability: Bool, isNewSubject: Bool, createdAt: Date, documentId: String? = nil) {
+    public enum RequestStatus: String, Codable {
+        case pending
+        case approved
+        case declined
+    }
+    
+    public init(id: UUID = UUID(), tutorId: String, studentId: String, subject: String, dateTime: Date, duration: Int, notes: String?, status: RequestStatus, isOutsideAvailability: Bool, isNewSubject: Bool, createdAt: Date, documentId: String? = nil) {
         self.id = id
         self.tutorId = tutorId
         self.studentId = studentId
@@ -63,10 +77,12 @@ struct TutoringRequest: Identifiable, Codable {
         self.documentId = documentId
     }
     
-    enum RequestStatus: String, Codable {
-        case pending
-        case approved
-        case declined
+    public func hash(into hasher: inout Hasher) {
+        hasher.combine(id)
+    }
+    
+    public static func == (lhs: TutoringRequest, rhs: TutoringRequest) -> Bool {
+        lhs.id == rhs.id
     }
 }
 
@@ -84,4 +100,4 @@ struct Rating: Identifiable, Codable {
         self.comment = comment
         self.date = date
     }
-} 
+}

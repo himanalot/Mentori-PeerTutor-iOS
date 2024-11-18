@@ -2,32 +2,35 @@ import SwiftUI
 import FirebaseFirestore
 
 enum SessionFilter: String, CaseIterable {
-    case upcoming, past, all
+    case upcoming, past, requests, all
 }
 
 class SessionViewModel: ObservableObject {
     @Published var sessions: [TutoringSession] = []
+    @Published var incomingRequests: [TutoringRequest] = []
+    @Published var outgoingRequests: [TutoringRequest] = []
     private var tutorNames: [String: String] = [:]
     private let firebase = FirebaseManager.shared
     
     var upcomingSessions: [TutoringSession] {
         let now = Date()
         return sessions.filter { session in
-            let endTime = session.dateTime.addingTimeInterval(TimeInterval(session.duration * 60))
-            return endTime > now && session.status == .scheduled
+            session.status == .scheduled && session.dateTime > now
         }
     }
     
     var pastSessions: [TutoringSession] {
         let now = Date()
         return sessions.filter { session in
-            let endTime = session.dateTime.addingTimeInterval(TimeInterval(session.duration * 60))
-            return endTime <= now || session.status == .cancelled || session.status == .completed
-        }
+            session.status == .completed || 
+            session.status == .cancelled || 
+            (session.status == .scheduled && session.dateTime <= now)
+        }.sorted { $0.dateTime > $1.dateTime }
     }
     
     init() {
         listenForSessions()
+        listenForRequests()
     }
     
     private func listenForSessions() {
@@ -41,10 +44,48 @@ class SessionViewModel: ObservableObject {
             .addSnapshotListener { [weak self] snapshot, error in
                 guard let documents = snapshot?.documents else { return }
                 
+                let now = Date()
                 self?.sessions = documents.compactMap { document in
                     var session = try? document.data(as: TutoringSession.self)
                     session?.documentId = document.documentID
+                    
+                    if session?.status == .scheduled && session?.dateTime ?? now <= now {
+                        self?.firebase.firestore.collection("sessions")
+                            .document(document.documentID)
+                            .updateData([
+                                "status": TutoringSession.SessionStatus.completed.rawValue
+                            ])
+                        
+                        session?.status = .completed
+                    }
+                    
                     return session
+                }
+            }
+    }
+    
+    private func listenForRequests() {
+        guard let userId = firebase.auth.currentUser?.uid else { return }
+        
+        // Listen for incoming requests (as tutor)
+        firebase.firestore.collection("requests")
+            .whereField("tutorId", isEqualTo: userId)
+            .whereField("status", isEqualTo: TutoringRequest.RequestStatus.pending.rawValue)
+            .addSnapshotListener { [weak self] snapshot, error in
+                guard let documents = snapshot?.documents else { return }
+                self?.incomingRequests = documents.compactMap { document in
+                    try? document.data(as: TutoringRequest.self)
+                }
+            }
+        
+        // Listen for outgoing requests (as student)
+        firebase.firestore.collection("requests")
+            .whereField("studentId", isEqualTo: userId)
+            .whereField("status", isEqualTo: TutoringRequest.RequestStatus.pending.rawValue)
+            .addSnapshotListener { [weak self] snapshot, error in
+                guard let documents = snapshot?.documents else { return }
+                self?.outgoingRequests = documents.compactMap { document in
+                    try? document.data(as: TutoringRequest.self)
                 }
             }
     }
@@ -68,31 +109,43 @@ class SessionViewModel: ObservableObject {
     }
     
     func submitReview(for session: TutoringSession, rating: Rating) {
-        guard let sessionId = session.documentId else { return }
+        guard let sessionId = session.documentId else {
+            print("Error: Session document ID is missing for session: \(session.id)")
+            return
+        }
         
         let reviewData: [String: Any] = [
             "sessionId": sessionId,
             "tutorId": session.tutorId,
+            "studentId": session.studentId,
             "rating": rating.rating,
             "comment": rating.comment,
             "date": Timestamp(date: Date())
         ]
         
-        // Add review
-        firebase.firestore.collection("reviews").addDocument(data: reviewData) { [weak self] error in
-            if let error = error {
-                print("Error submitting review: \(error.localizedDescription)")
-                return
+        // Add review with auto-generated document ID
+        firebase.firestore.collection("reviews")
+            .addDocument(data: reviewData) { [weak self] error in
+                if let error = error {
+                    print("Error submitting review: \(error.localizedDescription)")
+                    return
+                }
+                
+                // Update session to mark as reviewed
+                self?.firebase.firestore.collection("sessions")
+                    .document(sessionId)
+                    .updateData([
+                        "hasReview": true
+                    ]) { error in
+                        if let error = error {
+                            print("Error updating session review status: \(error.localizedDescription)")
+                            return
+                        }
+                        
+                        // Update tutor's average rating
+                        self?.updateTutorRating(tutorId: session.tutorId)
+                    }
             }
-            
-            // Update session to mark as reviewed
-            self?.firebase.firestore.collection("sessions").document(sessionId).updateData([
-                "hasReview": true
-            ])
-            
-            // Update tutor's average rating
-            self?.updateTutorRating(tutorId: session.tutorId)
-        }
     }
     
     private func updateTutorRating(tutorId: String) {
@@ -128,12 +181,20 @@ class SessionViewModel: ObservableObject {
     func cancelSession(_ session: TutoringSession) {
         guard let sessionId = session.documentId else { return }
         
+        // Update the session status in Firestore
         firebase.firestore.collection("sessions").document(sessionId).updateData([
             "status": TutoringSession.SessionStatus.cancelled.rawValue
         ]) { [weak self] error in
             if let error = error {
                 print("Error cancelling session: \(error.localizedDescription)")
-                // Handle error if needed
+                return
+            }
+            
+            // Update the local session status
+            DispatchQueue.main.async {
+                if let index = self?.sessions.firstIndex(where: { $0.documentId == sessionId }) {
+                    self?.sessions[index].status = .cancelled
+                }
             }
         }
     }
@@ -150,6 +211,8 @@ class SessionViewModel: ObservableObject {
             return sessions.filter { $0.dateTime > now && $0.status == .scheduled }
         case .past:
             return sessions.filter { $0.dateTime <= now || $0.status == .cancelled || $0.status == .completed }
+        case .requests:
+            return [] // Return empty array since requests are handled separately
         case .all:
             return sessions
         }
@@ -172,6 +235,82 @@ class SessionViewModel: ObservableObject {
             }
         }
     }
+    
+    @MainActor
+    func refreshRequests() async {
+        guard let userId = firebase.auth.currentUser?.uid else { return }
+        
+        let snapshot = try? await firebase.firestore.collection("requests")
+            .whereField("tutorId", isEqualTo: userId)
+            .whereField("status", isEqualTo: TutoringRequest.RequestStatus.pending.rawValue)
+            .getDocuments()
+        
+        if let documents = snapshot?.documents {
+            self.incomingRequests = documents.compactMap { document in
+                try? document.data(as: TutoringRequest.self)
+            }
+        }
+        
+        let snapshotOutgoing = try? await firebase.firestore.collection("requests")
+            .whereField("studentId", isEqualTo: userId)
+            .whereField("status", isEqualTo: TutoringRequest.RequestStatus.pending.rawValue)
+            .getDocuments()
+        
+        if let documents = snapshotOutgoing?.documents {
+            self.outgoingRequests = documents.compactMap { document in
+                try? document.data(as: TutoringRequest.self)
+            }
+        }
+    }
+    
+    func handleRequest(_ request: TutoringRequest, approved: Bool) {
+        guard let requestId = request.documentId else { return }
+        
+        if approved {
+            // Create new session
+            let session = TutoringSession(
+                tutorId: request.tutorId,
+                studentId: request.studentId,
+                subject: request.subject,
+                dateTime: request.dateTime,
+                duration: request.duration,
+                status: .scheduled,
+                notes: request.notes,
+                hasReview: false
+            )
+            
+            // First create the session
+            do {
+                try firebase.firestore.collection("sessions")
+                    .addDocument(from: session) { [weak self] error in
+                        if let error = error {
+                            print("Error creating session: \(error.localizedDescription)")
+                            return
+                        }
+                        
+                        // Then delete the request
+                        self?.firebase.firestore.collection("requests")
+                            .document(requestId)
+                            .delete() { error in
+                                if let error = error {
+                                    print("Error deleting request: \(error.localizedDescription)")
+                                }
+                            }
+                    }
+            } catch {
+                print("Error encoding session: \(error.localizedDescription)")
+            }
+        } else {
+            // Just delete the declined request
+            firebase.firestore.collection("requests")
+                .document(requestId)
+                .delete() { error in
+                    if let error = error {
+                        print("Error deleting request: \(error.localizedDescription)")
+                    }
+                }
+        }
+    }
 }
 
 struct SessionsView: View {
@@ -180,50 +319,95 @@ struct SessionsView: View {
     @State private var selectedSession: TutoringSession?
     @State private var showingReviewSheet = false
     
-    var filteredSessions: [TutoringSession] {
+    var filteredContent: [AnyHashable] {
         switch selectedFilter {
         case .upcoming:
-            return viewModel.upcomingSessions
+            return viewModel.upcomingSessions.map { $0 as AnyHashable }
         case .past:
-            return viewModel.pastSessions
+            return viewModel.pastSessions.map { $0 as AnyHashable }
+        case .requests:
+            return (viewModel.incomingRequests + viewModel.outgoingRequests).map { $0 as AnyHashable }
         case .all:
-            return viewModel.sessions
+            return viewModel.sessions.map { $0 as AnyHashable }
         }
     }
     
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
-                // Filter Picker
-                Picker("Filter", selection: $selectedFilter) {
-                    ForEach(SessionFilter.allCases, id: \.self) { filter in
-                        Text(filter.rawValue.capitalized)
-                            .tag(filter)
+                // Filter buttons
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 12) {
+                        ForEach(SessionFilter.allCases, id: \.self) { filter in
+                            FilterButton(title: filter.rawValue.capitalized,
+                                       isSelected: selectedFilter == filter) {
+                                selectedFilter = filter
+                            }
+                        }
                     }
+                    .padding()
                 }
-                .pickerStyle(.segmented)
-                .padding()
                 
-                if filteredSessions.isEmpty {
+                // Content
+                if filteredContent.isEmpty {
                     ContentUnavailableView(
-                        "No Sessions",
+                        "No \(selectedFilter.rawValue)",
                         systemImage: "calendar.badge.exclamationmark",
-                        description: Text("You don't have any \(selectedFilter.rawValue) sessions")
+                        description: Text("You don't have any \(selectedFilter.rawValue)")
                     )
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 12) {
-                            ForEach(filteredSessions) { session in
-                                SessionRow(
-                                    session: session,
-                                    tutorName: viewModel.getTutorName(for: session.tutorId),
-                                    onCancel: { viewModel.cancelSession(session) },
-                                    onReview: {
-                                        selectedSession = session
-                                        showingReviewSheet = true
+                            if selectedFilter == .requests {
+                                if !viewModel.incomingRequests.isEmpty {
+                                    Section(header: 
+                                        Text("Incoming Requests")
+                                            .font(.headline)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(.horizontal)
+                                            .padding(.top, 8)
+                                    ) {
+                                        ForEach(viewModel.incomingRequests) { request in
+                                            TutoringRequestRow(
+                                                request: request,
+                                                type: .incoming,
+                                                onResponse: { approved in
+                                                    viewModel.handleRequest(request, approved: approved)
+                                                }
+                                            )
+                                            .padding(.horizontal)
+                                        }
                                     }
-                                )
-                                .padding(.horizontal)
+                                }
+                                
+                                if !viewModel.outgoingRequests.isEmpty {
+                                    Section(header: 
+                                        Text("Outgoing Requests")
+                                            .font(.headline)
+                                            .frame(maxWidth: .infinity, alignment: .leading)
+                                            .padding(.horizontal)
+                                            .padding(.top, 8)
+                                    ) {
+                                        ForEach(viewModel.outgoingRequests) { request in
+                                            TutoringRequestRow(
+                                                request: request,
+                                                type: .outgoing,
+                                                onResponse: { _ in }
+                                            )
+                                            .padding(.horizontal)
+                                        }
+                                    }
+                                }
+                            } else {
+                                ForEach(viewModel.sessions) { session in
+                                    SessionRow(
+                                        session: session,
+                                        tutorName: viewModel.getTutorName(for: session.tutorId),
+                                        onCancel: { viewModel.cancelSession(session) },
+                                        onReview: { selectedSession = session }
+                                    )
+                                    .padding(.horizontal)
+                                }
                             }
                         }
                         .padding(.vertical)
@@ -231,21 +415,15 @@ struct SessionsView: View {
                 }
             }
             .navigationTitle("Sessions")
-            .sheet(isPresented: $showingReviewSheet) {
-                if let session = selectedSession {
-                    ReviewSessionView(
-                        session: session,
-                        tutorName: viewModel.getTutorName(for: session.tutorId),
-                        onSubmit: { rating in
-                            viewModel.submitReview(for: session, rating: rating)
-                            showingReviewSheet = false
-                        }
-                    )
+            .sheet(item: $selectedSession) { session in
+                ReviewSheet(session: session) { rating in
+                    viewModel.submitReview(for: session, rating: rating)
                 }
             }
-            .refreshable {
-                await viewModel.refreshSessions()
-            }
+        }
+        .refreshable {
+            await viewModel.refreshSessions()
+            await viewModel.refreshRequests()
         }
     }
 }
@@ -298,7 +476,11 @@ struct SessionRow: View {
             
             // Action Buttons
             if session.status == .scheduled {
-                Button(action: onCancel) {
+                Button(action: {
+                    withAnimation {
+                        onCancel()
+                    }
+                }) {
                     Label("Cancel Session", systemImage: "xmark.circle")
                         .foregroundColor(.red)
                         .frame(maxWidth: .infinity)
@@ -306,14 +488,25 @@ struct SessionRow: View {
                         .background(Color.red.opacity(0.1))
                         .cornerRadius(8)
                 }
-            } else if session.status == .completed && !session.hasReview {
-                Button(action: onReview) {
-                    Label("Leave Review", systemImage: "star")
-                        .foregroundColor(.blue)
+            } else if session.status == .completed {
+                if session.hasReview {
+                    // Show that review has been submitted
+                    Label("Review Submitted", systemImage: "checkmark.circle.fill")
+                        .foregroundColor(.green)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
-                        .background(Color.blue.opacity(0.1))
+                        .background(Color.green.opacity(0.1))
                         .cornerRadius(8)
+                } else {
+                    // Show review button only if no review has been submitted
+                    Button(action: onReview) {
+                        Label("Leave Review", systemImage: "star")
+                            .foregroundColor(.blue)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(Color.blue.opacity(0.1))
+                            .cornerRadius(8)
+                    }
                 }
             }
         }
@@ -381,5 +574,77 @@ struct ReviewSessionView: View {
 struct SessionsView_Previews: PreviewProvider {
     static var previews: some View {
         SessionsView()
+    }
+}
+
+struct FilterButton: View {
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
+    
+    var body: some View {
+        Button(action: action) {
+            Text(title)
+                .font(.subheadline)
+                .fontWeight(isSelected ? .semibold : .regular)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 8)
+                .background(isSelected ? Color.blue : Color.blue.opacity(0.1))
+                .foregroundColor(isSelected ? .white : .blue)
+                .cornerRadius(20)
+        }
+    }
+}
+
+struct ReviewSheet: View {
+    let session: TutoringSession
+    let onSubmit: (Rating) -> Void
+    @Environment(\.dismiss) private var dismiss
+    @State private var rating = 5
+    @State private var comment = ""
+    
+    var body: some View {
+        NavigationView {
+            Form {
+                Section {
+                    Picker("Rating", selection: $rating) {
+                        ForEach(1...5, id: \.self) { rating in
+                            HStack {
+                                Text("\(rating)")
+                                Image(systemName: "star.fill")
+                                    .foregroundColor(.yellow)
+                            }
+                            .tag(rating)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                }
+                
+                Section {
+                    TextEditor(text: $comment)
+                        .frame(height: 100)
+                }
+                
+                Section {
+                    Button("Submit Review") {
+                        let newRating = Rating(
+                            sessionId: session.documentId ?? "",
+                            rating: rating,
+                            comment: comment,
+                            date: Date()
+                        )
+                        onSubmit(newRating)
+                        dismiss()
+                    }
+                    .frame(maxWidth: .infinity)
+                    .foregroundColor(.blue)
+                    .disabled(session.documentId == nil)
+                }
+            }
+            .navigationTitle("Review Session")
+            .navigationBarItems(trailing: Button("Cancel") {
+                dismiss()
+            })
+        }
     }
 }

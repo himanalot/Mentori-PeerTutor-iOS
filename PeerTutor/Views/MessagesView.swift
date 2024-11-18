@@ -11,30 +11,35 @@ struct Message: Identifiable {
     let tutorId: String
 }
 
-struct ChatMessage: Identifiable {
+struct ChatMessage: Identifiable, Equatable {
     let id = UUID()
     let sender: String
     let content: String
     let timestamp: Date
     let isFromCurrentUser: Bool
+    
+    static func == (lhs: ChatMessage, rhs: ChatMessage) -> Bool {
+        lhs.id == rhs.id &&
+        lhs.sender == rhs.sender &&
+        lhs.content == rhs.content &&
+        lhs.timestamp == rhs.timestamp &&
+        lhs.isFromCurrentUser == rhs.isFromCurrentUser
+    }
 }
 
 // MARK: - Messages View
 struct MessagesView: View {
     @StateObject private var viewModel = MessagesViewModel()
     @State private var showingNewMessage = false
+    @State private var selectedMessage: Message?
     
     var body: some View {
         NavigationView {
             List {
                 ForEach(viewModel.messages) { message in
-                    NavigationLink(
-                        destination: ChatView(
-                            conversation: message.conversation,
-                            tutorName: message.sender,
-                            tutorId: message.tutorId
-                        )
-                    ) {
+                    Button {
+                        selectedMessage = message
+                    } label: {
                         MessageRow(message: message)
                     }
                 }
@@ -51,6 +56,16 @@ struct MessagesView: View {
                 NewMessageView(isPresented: $showingNewMessage, onSelectTutor: { tutor in
                     viewModel.startNewChat(with: tutor)
                 })
+                .environmentObject(viewModel)
+            }
+            .sheet(item: $selectedMessage) { message in
+                NavigationView {
+                    ChatView(
+                        conversation: message.conversation,
+                        tutorName: message.sender,
+                        tutorId: message.tutorId
+                    )
+                }
             }
             .refreshable {
                 await viewModel.refreshMessages()
@@ -59,46 +74,131 @@ struct MessagesView: View {
     }
 }
 
-// MARK: - New Message View
-struct NewMessageView: View {
-    @Binding var isPresented: Bool
-    let onSelectTutor: (User) -> Void
-    @StateObject private var tutorSearchViewModel = TutorSearchViewModel()
-    @State private var searchText = ""
+// MARK: - Chat View
+struct ChatView: View {
+    let conversation: [ChatMessage]
+    let tutorName: String
+    let tutorId: String
+    @State private var messageText = ""
+    @StateObject private var viewModel: ChatViewModel
+    @Environment(\.presentationMode) var presentationMode
+    @State private var isSendingMessage = false
     
-    var filteredTutors: [User] {
-        if searchText.isEmpty {
-            return tutorSearchViewModel.tutors
-        }
-        return tutorSearchViewModel.tutors.filter { tutor in
-            tutor.name.localizedCaseInsensitiveContains(searchText) ||
-            tutor.subjects.map { $0.name }.joined(separator: " ")
-                .localizedCaseInsensitiveContains(searchText)
-        }
+    init(conversation: [ChatMessage], tutorName: String, tutorId: String) {
+        self.conversation = conversation
+        self.tutorName = tutorName
+        self.tutorId = tutorId
+        _viewModel = StateObject(wrappedValue: ChatViewModel(tutorId: tutorId))
     }
     
     var body: some View {
-        NavigationView {
-            List {
-                ForEach(filteredTutors) { tutor in
-                    Button(action: {
-                        onSelectTutor(tutor)
-                        isPresented = false
-                    }) {
-                        TutorRowView(tutor: tutor)
+        VStack(spacing: 0) {
+            ScrollViewReader { scrollProxy in
+                ScrollView {
+                    LazyVStack(spacing: 8) {
+                        ForEach(viewModel.messages) { message in
+                            ChatBubble(message: message)
+                                .padding(.horizontal)
+                                .id(message.id)
+                        }
+                    }
+                    .padding(.vertical, 8)
+                }
+                .onChange(of: viewModel.messages) { _, messages in
+                    if let lastMessage = messages.last {
+                        withAnimation {
+                            scrollProxy.scrollTo(lastMessage.id, anchor: .bottom)
+                        }
                     }
                 }
             }
-            .navigationTitle("New Message")
-            .searchable(text: $searchText, prompt: "Search tutors")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
-                        isPresented = false
+            
+            Divider()
+            
+            // Message input area
+            HStack(alignment: .center, spacing: 8) {
+                TextField("Message", text: $messageText)
+                    .textFieldStyle(.roundedBorder)
+                    .padding(.leading, 8)
+                
+                if !messageText.isEmpty {
+                    Button {
+                        let message = messageText
+                        messageText = ""
+                        viewModel.sendMessage(content: message)
+                    } label: {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .resizable()
+                            .frame(width: 32, height: 32)
+                            .foregroundColor(.blue)
                     }
+                    .padding(.trailing, 8)
                 }
+            }
+            .padding(.vertical, 8)
+            .background(Color(.systemBackground))
+        }
+        .navigationBarItems(trailing: 
+            NavigationLink(destination: TutorDetailView(tutorId: tutorId)) {
+                Image(systemName: "person.circle.fill")
+                    .resizable()
+                    .frame(width: 24, height: 24)
+                    .foregroundColor(.blue)
+            }
+        )
+        .navigationTitle(tutorName)
+        .navigationBarTitleDisplayMode(.inline)
+        .onAppear {
+            viewModel.startListening()
+        }
+        .onDisappear {
+            viewModel.stopListening()
+        }
+    }
+}
+
+// MARK: - Message Row
+struct MessageRow: View {
+    let message: Message
+    
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text(message.sender)
+                .font(.headline)
+            Text(message.lastMessage)
+                .font(.subheadline)
+                .foregroundColor(.gray)
+            Text(message.timestamp, style: .relative)
+                .font(.caption)
+                .foregroundColor(.gray)
+        }
+        .padding(.vertical, 4)
+    }
+}
+
+// MARK: - Chat Bubble
+struct ChatBubble: View {
+    let message: ChatMessage
+    
+    var body: some View {
+        HStack(spacing: 0) {
+            if message.isFromCurrentUser {
+                Spacer(minLength: 40)
+            }
+            
+            Text(message.content)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(message.isFromCurrentUser ? Color.blue : Color(.systemGray6))
+                .foregroundColor(message.isFromCurrentUser ? .white : .primary)
+                .clipShape(RoundedRectangle(cornerRadius: 20))
+                .frame(maxWidth: UIScreen.main.bounds.width * 0.7, alignment: message.isFromCurrentUser ? .trailing : .leading)
+            
+            if !message.isFromCurrentUser {
+                Spacer(minLength: 40)
             }
         }
+        .padding(.horizontal, 8)
     }
 }
 
@@ -106,25 +206,21 @@ struct NewMessageView: View {
 class MessagesViewModel: ObservableObject {
     @Published var messages: [Message] = []
     private let firebase = FirebaseManager.shared
-    private var tutorNames: [String: String] = [:] // Cache for tutor names
+    private var tutorNames: [String: String] = [:]
     
     init() {
         listenForMessages()
     }
     
     func startNewChat(with tutor: User) {
-        guard let tutorId = tutor.id,
-              let currentUserId = firebase.auth.currentUser?.uid else { return }
-        
-        // Create initial message
-        let message = [
-            "senderId": currentUserId,
-            "receiverId": tutorId,
-            "content": "Started a conversation",
-            "timestamp": Timestamp(date: Date())
-        ] as [String : Any]
-        
-        firebase.firestore.collection("messages").addDocument(data: message)
+        guard let tutorId = tutor.id else { return }
+        messages.append(Message(
+            sender: tutor.name,
+            lastMessage: "Start a conversation",
+            timestamp: Date(),
+            conversation: [],
+            tutorId: tutorId
+        ))
     }
     
     private func listenForMessages() {
@@ -137,10 +233,7 @@ class MessagesViewModel: ObservableObject {
             ]))
             .order(by: "timestamp", descending: true)
             .addSnapshotListener { [weak self] snapshot, error in
-                guard let documents = snapshot?.documents else {
-                    print("Error fetching messages: \(error?.localizedDescription ?? "Unknown error")")
-                    return
-                }
+                guard let documents = snapshot?.documents else { return }
                 
                 // Group messages by conversation
                 var conversationMap: [String: (lastMessage: String, timestamp: Date, messages: [ChatMessage], tutorId: String)] = [:]
@@ -209,10 +302,8 @@ class MessagesViewModel: ObservableObject {
                     }
                 }
             } else {
-                DispatchQueue.main.async {
-                    if let messageIndex = self.messages.firstIndex(where: { $0.tutorId == tutorId }) {
-                        self.messages[messageIndex].sender = self.tutorNames[tutorId]!
-                    }
+                if let messageIndex = messages.firstIndex(where: { $0.tutorId == tutorId }) {
+                    messages[messageIndex].sender = tutorNames[tutorId]!
                 }
             }
         }
@@ -241,109 +332,72 @@ class MessagesViewModel: ObservableObject {
     }
 }
 
-// MARK: - Message Row
-struct MessageRow: View {
-    let message: Message
+// MARK: - New Message View
+struct NewMessageView: View {
+    @Binding var isPresented: Bool
+    let onSelectTutor: (User) -> Void
+    @StateObject private var tutorSearchViewModel = TutorSearchViewModel()
+    @State private var searchText = ""
+    @EnvironmentObject private var messagesViewModel: MessagesViewModel
     
-    var body: some View {
-        VStack(alignment: .leading) {
-            Text(message.sender)
-                .font(.headline)
-            Text(message.lastMessage)
-                .font(.subheadline)
-                .foregroundColor(.gray)
-            Text(message.timestamp, style: .relative)
-                .font(.caption)
-                .foregroundColor(.gray)
+    var filteredTutors: [User] {
+        // Get set of tutor IDs that already have conversations
+        let existingTutorIds = Set(messagesViewModel.messages.map { $0.tutorId })
+        
+        // Filter tutors
+        let availableTutors = tutorSearchViewModel.tutors.filter { tutor in
+            guard let tutorId = tutor.id else { return false }
+            return !existingTutorIds.contains(tutorId)
         }
-        .padding(.vertical, 4)
+        
+        if searchText.isEmpty {
+            return availableTutors
+        }
+        
+        return availableTutors.filter { tutor in
+            tutor.name.localizedCaseInsensitiveContains(searchText) ||
+            tutor.subjects.map { $0.name }.joined(separator: " ")
+                .localizedCaseInsensitiveContains(searchText)
+        }
     }
-}
-
-// MARK: - Chat View
-struct ChatView: View {
-    let conversation: [ChatMessage]
-    let tutorName: String
-    let tutorId: String
-    @State private var messageText = ""
-    @State private var showingTutorProfile = false
-    @StateObject private var viewModel = ChatViewModel()
     
     var body: some View {
-        GeometryReader { geometry in  // Add GeometryReader to fix layout issues
-            VStack(spacing: 0) {
-                ScrollViewReader { scrollProxy in
-                    ScrollView {
-                        LazyVStack(spacing: 8) {
-                            ForEach(conversation) { message in
-                                ChatBubble(message: message)
-                                    .padding(.horizontal)
-                                    .id(message.id)  // Add id for scrolling
+        NavigationView {
+            Group {
+                if filteredTutors.isEmpty {
+                    VStack(spacing: 16) {
+                        Text("No New Tutors Available")
+                            .font(.headline)
+                        Text("You already have conversations with all available tutors")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal)
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .background(Color(.systemGroupedBackground))
+                } else {
+                    List {
+                        ForEach(filteredTutors) { tutor in
+                            Button(action: {
+                                onSelectTutor(tutor)
+                                isPresented = false
+                            }) {
+                                TutorRowView(tutor: tutor)
                             }
                         }
-                        .padding(.vertical, 8)
-                    }
-                    .frame(height: geometry.size.height - 60)  // Fixed height for ScrollView
-                }
-                
-                // Message input area
-                HStack(spacing: 8) {
-                    TextField("Message", text: $messageText)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .frame(height: 40)
-                    
-                    Button(action: sendMessage) {
-                        Image(systemName: "paperplane.fill")
-                            .foregroundColor(.blue)
-                            .frame(width: 40, height: 40)
                     }
                 }
-                .padding(.horizontal)
-                .padding(.vertical, 8)
-                .background(Color(.systemBackground))
+            }
+            .navigationTitle("New Message")
+            .searchable(text: $searchText, prompt: "Search tutors")
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        isPresented = false
+                    }
+                }
             }
         }
-        .navigationBarItems(trailing:
-            NavigationLink(destination: TutorDetailView(tutorId: tutorId)) {
-                Image(systemName: "person.circle.fill")
-                    .resizable()
-                    .frame(width: 24, height: 24)
-                    .foregroundColor(.blue)
-            }
-        )
-        .navigationTitle(tutorName)
-        .navigationBarTitleDisplayMode(.inline)
-    }
-    
-    private func sendMessage() {
-        guard !messageText.isEmpty else { return }
-        viewModel.sendMessage(to: tutorId, content: messageText)
-        messageText = ""
-    }
-}
-
-// Update ChatBubble to have fixed dimensions
-struct ChatBubble: View {
-    let message: ChatMessage
-    
-    var body: some View {
-        HStack(spacing: 0) {
-            if message.isFromCurrentUser {
-                Spacer(minLength: 40)
-            }
-            
-            Text(message.content)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(message.isFromCurrentUser ? Color.blue : Color(.systemGray6))
-                .foregroundColor(message.isFromCurrentUser ? .white : .primary)
-                .clipShape(RoundedRectangle(cornerRadius: 20))
-                .frame(maxWidth: UIScreen.main.bounds.width * 0.7, alignment: message.isFromCurrentUser ? .trailing : .leading)
-            
-            if !message.isFromCurrentUser {
-                Spacer(minLength: 40)
-            }
-        }
-        .padding(.horizontal, 8)
     }
 }

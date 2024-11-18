@@ -3,34 +3,18 @@ import FirebaseFirestore
 
 class ChatViewModel: ObservableObject {
     @Published var messages: [ChatMessage] = []
-    @Published var tutor: User?
+    private let tutorId: String
     private let firebase = FirebaseManager.shared
+    private var listener: ListenerRegistration?
     
-    func loadTutor(tutorId: String) {
-        firebase.firestore.collection("users").document(tutorId).getDocument { [weak self] snapshot, error in
-            if let data = snapshot?.data() {
-                self?.tutor = try? Firestore.Decoder().decode(User.self, from: data)
-            }
-        }
+    init(tutorId: String) {
+        self.tutorId = tutorId
     }
     
-    func sendMessage(to tutorId: String, content: String) {
+    func startListening() {
         guard let currentUserId = firebase.auth.currentUser?.uid else { return }
         
-        let message = [
-            "senderId": currentUserId,
-            "receiverId": tutorId,
-            "content": content,
-            "timestamp": Timestamp(date: Date())
-        ] as [String: Any]
-        
-        firebase.firestore.collection("messages").addDocument(data: message)
-    }
-    
-    func listenForMessages(tutorId: String) {
-        guard let currentUserId = firebase.auth.currentUser?.uid else { return }
-        
-        firebase.firestore.collection("messages")
+        listener = firebase.firestore.collection("messages")
             .whereFilter(FirebaseFirestore.Filter.orFilter([
                 FirebaseFirestore.Filter.andFilter([
                     FirebaseFirestore.Filter.whereField("senderId", isEqualTo: currentUserId),
@@ -56,5 +40,22 @@ class ChatViewModel: ObservableObject {
                     )
                 }
             }
+    }
+    
+    func stopListening() {
+        listener?.remove()
+    }
+    
+    func sendMessage(content: String) {
+        guard let currentUserId = firebase.auth.currentUser?.uid else { return }
+        
+        let message = [
+            "senderId": currentUserId,
+            "receiverId": tutorId,
+            "content": content,
+            "timestamp": Timestamp(date: Date())
+        ] as [String: Any]
+        
+        firebase.firestore.collection("messages").addDocument(data: message)
     }
 }
