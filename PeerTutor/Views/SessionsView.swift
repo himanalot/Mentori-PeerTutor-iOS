@@ -22,8 +22,8 @@ class SessionViewModel: ObservableObject {
     var pastSessions: [TutoringSession] {
         let now = Date()
         return sessions.filter { session in
-            session.status == .completed || 
-            session.status == .cancelled || 
+            session.status == .completed ||
+            session.status == .cancelled ||
             (session.status == .scheduled && session.dateTime <= now)
         }.sorted { $0.dateTime > $1.dateTime }
     }
@@ -319,19 +319,6 @@ struct SessionsView: View {
     @State private var selectedSession: TutoringSession?
     @State private var showingReviewSheet = false
     
-    var filteredContent: [AnyHashable] {
-        switch selectedFilter {
-        case .upcoming:
-            return viewModel.upcomingSessions.map { $0 as AnyHashable }
-        case .past:
-            return viewModel.pastSessions.map { $0 as AnyHashable }
-        case .requests:
-            return (viewModel.incomingRequests + viewModel.outgoingRequests).map { $0 as AnyHashable }
-        case .all:
-            return viewModel.sessions.map { $0 as AnyHashable }
-        }
-    }
-    
     var body: some View {
         NavigationView {
             VStack(spacing: 0) {
@@ -349,23 +336,61 @@ struct SessionsView: View {
                 }
                 
                 // Content
-                if filteredContent.isEmpty {
-                    ContentUnavailableView(
-                        "No \(selectedFilter.rawValue)",
-                        systemImage: "calendar.badge.exclamationmark",
-                        description: Text("You don't have any \(selectedFilter.rawValue)")
-                    )
-                } else {
-                    ScrollView {
-                        LazyVStack(spacing: 12) {
-                            if selectedFilter == .requests {
+                ScrollView {
+                    LazyVStack(spacing: 12) {
+                        switch selectedFilter {
+                        case .upcoming:
+                            if viewModel.upcomingSessions.isEmpty {
+                                ContentUnavailableView(
+                                    "No Upcoming Sessions",
+                                    systemImage: "calendar",
+                                    description: Text("You don't have any upcoming sessions scheduled")
+                                )
+                            } else {
+                                ForEach(viewModel.upcomingSessions) { session in
+                                    SessionRow(
+                                        session: session,
+                                        tutorName: viewModel.getTutorName(for: session.tutorId),
+                                        onCancel: { viewModel.cancelSession(session) },
+                                        onReview: { selectedSession = session }
+                                    )
+                                    .padding(.horizontal)
+                                }
+                            }
+                            
+                        case .past:
+                            if viewModel.pastSessions.isEmpty {
+                                ContentUnavailableView(
+                                    "No Past Sessions",
+                                    systemImage: "clock.arrow.circlepath",
+                                    description: Text("You haven't completed any sessions yet")
+                                )
+                            } else {
+                                ForEach(viewModel.pastSessions) { session in
+                                    SessionRow(
+                                        session: session,
+                                        tutorName: viewModel.getTutorName(for: session.tutorId),
+                                        onCancel: nil,
+                                        onReview: { selectedSession = session }
+                                    )
+                                    .padding(.horizontal)
+                                }
+                            }
+                            
+                        case .requests:
+                            if viewModel.incomingRequests.isEmpty && viewModel.outgoingRequests.isEmpty {
+                                ContentUnavailableView(
+                                    "No Requests",
+                                    systemImage: "tray",
+                                    description: Text("You don't have any pending requests")
+                                )
+                            } else {
                                 if !viewModel.incomingRequests.isEmpty {
-                                    Section(header: 
+                                    Section(header:
                                         Text("Incoming Requests")
                                             .font(.headline)
                                             .frame(maxWidth: .infinity, alignment: .leading)
                                             .padding(.horizontal)
-                                            .padding(.top, 8)
                                     ) {
                                         ForEach(viewModel.incomingRequests) { request in
                                             TutoringRequestRow(
@@ -381,12 +406,12 @@ struct SessionsView: View {
                                 }
                                 
                                 if !viewModel.outgoingRequests.isEmpty {
-                                    Section(header: 
+                                    Section(header:
                                         Text("Outgoing Requests")
                                             .font(.headline)
                                             .frame(maxWidth: .infinity, alignment: .leading)
                                             .padding(.horizontal)
-                                            .padding(.top, 8)
+                                            .padding(.top, 20)
                                     ) {
                                         ForEach(viewModel.outgoingRequests) { request in
                                             TutoringRequestRow(
@@ -398,6 +423,15 @@ struct SessionsView: View {
                                         }
                                     }
                                 }
+                            }
+                            
+                        case .all:
+                            if viewModel.sessions.isEmpty {
+                                ContentUnavailableView(
+                                    "No Sessions",
+                                    systemImage: "calendar.badge.exclamationmark",
+                                    description: Text("You don't have any sessions")
+                                )
                             } else {
                                 ForEach(viewModel.sessions) { session in
                                     SessionRow(
@@ -410,8 +444,8 @@ struct SessionsView: View {
                                 }
                             }
                         }
-                        .padding(.vertical)
                     }
+                    .padding(.vertical)
                 }
             }
             .navigationTitle("Sessions")
@@ -431,7 +465,7 @@ struct SessionsView: View {
 struct SessionRow: View {
     let session: TutoringSession
     let tutorName: String
-    let onCancel: () -> Void
+    let onCancel: (() -> Void)?
     let onReview: () -> Void
     private let firebase = FirebaseManager.shared
     
@@ -478,7 +512,7 @@ struct SessionRow: View {
             if session.status == .scheduled {
                 Button(action: {
                     withAnimation {
-                        onCancel()
+                        onCancel?()
                     }
                 }) {
                     Label("Cancel Session", systemImage: "xmark.circle")
