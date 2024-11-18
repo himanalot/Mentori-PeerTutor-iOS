@@ -301,7 +301,14 @@ struct ScheduleSessionView: View {
     private let firebase = FirebaseManager.shared
     
     private var isValidTimeRange: Bool {
-        selectedEndTime > selectedStartTime
+        // Check if selected time is in the past
+        let calendar = Calendar.current
+        let sessionDateTime = calendar.date(bySettingHour: calendar.component(.hour, from: selectedStartTime),
+                                         minute: calendar.component(.minute, from: selectedStartTime),
+                                         second: 0,
+                                         of: selectedDate) ?? selectedDate
+        
+        return selectedEndTime > selectedStartTime && sessionDateTime > Date()
     }
     
     private var availableTimeSlot: TimeSlot? {

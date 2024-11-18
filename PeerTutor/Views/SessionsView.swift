@@ -112,6 +112,12 @@ class SessionViewModel: ObservableObject {
         return tutorNames[tutorId] ?? "Loading..."
     }
     
+    func getOtherPartyName(for session: TutoringSession) -> String {
+        guard let currentUserId = firebase.auth.currentUser?.uid else { return "Loading..." }
+        let idToFetch = session.tutorId == currentUserId ? session.studentId : session.tutorId
+        return getTutorName(for: idToFetch)
+    }
+    
     func submitReview(for session: TutoringSession, rating: Rating) {
         guard let sessionId = session.documentId else {
             print("Error: Session document ID is missing for session: \(session.id)")
@@ -371,7 +377,7 @@ struct SessionsView: View {
                                 ForEach(viewModel.upcomingSessions) { session in
                                     SessionRow(
                                         session: session,
-                                        tutorName: viewModel.getTutorName(for: session.tutorId),
+                                        tutorName: viewModel.getOtherPartyName(for: session),
                                         onCancel: { viewModel.cancelSession(session) },
                                         onReview: { selectedSession = session }
                                     )
