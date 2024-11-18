@@ -297,6 +297,7 @@ struct ScheduleSessionView: View {
     @State private var isNewSubject = false
     @State private var isCustomSubject = false
     @State private var customSubject = ""
+    @State private var showingOverlapAlert = false
     
     private let firebase = FirebaseManager.shared
     
@@ -385,6 +386,11 @@ struct ScheduleSessionView: View {
                     Text("Your tutoring session has been scheduled successfully.")
                 }
             }
+            .alert("Time Conflict", isPresented: $showingOverlapAlert) {
+                Button("OK", role: .cancel) { }
+            } message: {
+                Text("The tutor is already booked for this time slot. Please select a different time.")
+            }
             .onAppear {
                 // Set initial times
                 let calendar = Calendar.current
@@ -440,13 +446,46 @@ struct ScheduleSessionView: View {
               let tutorId = tutor.id else { return }
         
         let calendar = Calendar.current
-        
-        // Combine selected date with selected start time
         let sessionDateTime = calendar.date(bySettingHour: calendar.component(.hour, from: selectedStartTime),
                                            minute: calendar.component(.minute, from: selectedStartTime),
                                            second: 0,
                                            of: selectedDate) ?? selectedDate
         
+        let sessionEndDateTime = calendar.date(bySettingHour: calendar.component(.hour, from: selectedEndTime),
+                                             minute: calendar.component(.minute, from: selectedEndTime),
+                                             second: 0,
+                                             of: selectedDate) ?? selectedDate
+        
+        // Check for overlapping sessions
+        firebase.firestore.collection("sessions")
+            .whereField("tutorId", isEqualTo: tutorId)
+            .whereField("status", isEqualTo: TutoringSession.SessionStatus.scheduled.rawValue)
+            .getDocuments { snapshot, error in
+                if let error = error {
+                    print("Error checking for overlapping sessions: \(error.localizedDescription)")
+                    return
+                }
+                
+                if let documents = snapshot?.documents {
+                    for document in documents {
+                        if let session = try? document.data(as: TutoringSession.self) {
+                            let sessionEnd = session.dateTime.addingTimeInterval(TimeInterval(session.duration * 60))
+                            
+                            // Check if new session overlaps with existing session
+                            if (sessionDateTime < sessionEnd && sessionEndDateTime > session.dateTime) {
+                                self.showingOverlapAlert = true
+                                return
+                            }
+                        }
+                    }
+                }
+                
+                // No overlap found, proceed with original scheduling logic
+                self.proceedWithScheduling(tutorId: tutorId, currentUserId: currentUserId, sessionDateTime: sessionDateTime)
+            }
+    }
+    
+    private func proceedWithScheduling(tutorId: String, currentUserId: String, sessionDateTime: Date) {
         // Get the actual subject (either custom or selected)
         let actualSubject = isCustomSubject ? customSubject : selectedSubject
         
@@ -456,7 +495,7 @@ struct ScheduleSessionView: View {
                 tutorId: tutorId,
                 studentId: currentUserId,
                 subject: actualSubject,
-                dateTime: sessionDateTime, // Use combined date and time
+                dateTime: sessionDateTime,
                 duration: calculateDuration(),
                 notes: note.isEmpty ? nil : note,
                 status: .pending,
@@ -478,7 +517,7 @@ struct ScheduleSessionView: View {
                 tutorId: tutorId,
                 studentId: currentUserId,
                 subject: selectedSubject,
-                dateTime: sessionDateTime, // Use combined date and time
+                dateTime: sessionDateTime,
                 duration: calculateDuration(),
                 status: .scheduled,
                 notes: note.isEmpty ? nil : note
