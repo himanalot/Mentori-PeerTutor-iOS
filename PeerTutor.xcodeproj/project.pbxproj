@@ -37,7 +37,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		FDAEE98B2CEC2C1600663A51 /* Exceptions for "PeerTutor" folder in "PeerTutor" target */ = {
+		FDAEE9D02CEC2F9400663A51 /* Exceptions for "PeerTutor" folder in "PeerTutor" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -50,7 +50,7 @@
 		FDE31D322CE947D2007CEC3B /* PeerTutor */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				FDAEE98B2CEC2C1600663A51 /* Exceptions for "PeerTutor" folder in "PeerTutor" target */,
+				FDAEE9D02CEC2F9400663A51 /* Exceptions for "PeerTutor" folder in "PeerTutor" target */,
 			);
 			path = PeerTutor;
 			sourceTree = "<group>";
