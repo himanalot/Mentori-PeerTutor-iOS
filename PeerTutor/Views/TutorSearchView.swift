@@ -324,6 +324,14 @@ struct ScheduleSessionView: View {
     var body: some View {
         NavigationView {
             Form {
+                Section(header: Text("Tutor's Availability")) {
+                    AvailabilityView(availability: tutor.availability.map { TimeSlot(
+                        dayOfWeek: $0.dayOfWeek,
+                        startTime: $0.startTime,
+                        endTime: $0.endTime
+                    )}, isCompact: true)
+                }
+                
                 Section(header: Text("Session Details")) {
                     Toggle("Request Different Subject", isOn: $isCustomSubject)
                     
@@ -553,6 +561,136 @@ struct ScheduleSessionView: View {
             let slotEndMinutes = (slotEndComponents.hour ?? 0) * 60 + (slotEndComponents.minute ?? 0)
             
             return selectedStartMinutes >= slotStartMinutes && selectedEndMinutes <= slotEndMinutes
+        }
+    }
+}
+
+struct TutorProfileView: View {
+    let tutor: User
+    @State private var showingMessageSheet = false
+    @State private var showingScheduleSheet = false
+    
+    var body: some View {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 16) {
+                // Profile Header
+                VStack(spacing: 16) {
+                    Circle()
+                        .fill(Color(.systemGray5))
+                        .frame(width: 100, height: 100)
+                        .overlay(
+                            Text(tutor.name.prefix(1).uppercased())
+                                .font(.title.bold())
+                                .foregroundColor(.gray)
+                        )
+                    
+                    VStack(spacing: 8) {
+                        Text(tutor.name)
+                            .font(.title2.bold())
+                        
+                        HStack(spacing: 4) {
+                            Image(systemName: "star.fill")
+                                .foregroundColor(.yellow)
+                            Text(String(format: "%.1f", tutor.displayRating))
+                            Text("(\(tutor.displayReviews) reviews)")
+                                .foregroundColor(.secondary)
+                        }
+                        .font(.subheadline)
+                    }
+                }
+                .padding(.top)
+                
+                // Bio Section
+                if !tutor.bio.isEmpty {
+                    VStack(alignment: .leading, spacing: 12) {
+                        Label("About", systemImage: "person.text.rectangle.fill")
+                            .font(.headline)
+                        Text(tutor.bio)
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding()
+                    .background(Color(.systemBackground))
+                    .cornerRadius(16)
+                    .shadow(color: Color.black.opacity(0.05), radius: 8)
+                }
+                
+                // Add Availability View here
+                if !tutor.availability.isEmpty {
+                    AvailabilityView(availability: tutor.availability.map { TimeSlot(
+                        dayOfWeek: $0.dayOfWeek,
+                        startTime: $0.startTime,
+                        endTime: $0.endTime
+                    )})
+                }
+                
+                // Subjects Grid
+                VStack(alignment: .leading, spacing: 12) {
+                    Label("Subjects", systemImage: "book.fill")
+                        .font(.headline)
+                    
+                    LazyVGrid(columns: [
+                        GridItem(.flexible()),
+                        GridItem(.flexible())
+                    ], spacing: 8) {
+                        ForEach(tutor.subjects, id: \.name) { subject in
+                            Text(subject.name)
+                                .font(.subheadline)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .frame(maxWidth: .infinity)
+                                .background(Color.blue.opacity(0.1))
+                                .foregroundColor(.blue)
+                                .cornerRadius(12)
+                        }
+                    }
+                }
+                .padding()
+                .background(Color(.systemBackground))
+                .cornerRadius(16)
+                .shadow(color: Color.black.opacity(0.05), radius: 8)
+                
+                // Action Buttons
+                VStack(spacing: 12) {
+                    Button(action: {
+                        showingMessageSheet = true
+                    }) {
+                        Label("Message", systemImage: "message")
+                            .frame(maxWidth: .infinity)
+                            .padding()
+                            .background(Color.blue)
+                            .foregroundColor(.white)
+                            .cornerRadius(10)
+                    }
+                    .sheet(isPresented: $showingMessageSheet) {
+                        NavigationView {
+                            ChatView(
+                                conversation: [],
+                                tutorName: tutor.name,
+                                tutorId: tutor.id ?? ""
+                            )
+                        }
+                    }
+                    
+                    Button(action: { showingScheduleSheet = true }) {
+                        HStack {
+                            Image(systemName: "calendar.badge.plus")
+                            Text("Schedule Session")
+                                .fontWeight(.semibold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .padding()
+                        .background(Color.green)
+                        .foregroundColor(.white)
+                        .cornerRadius(12)
+                    }
+                    .sheet(isPresented: $showingScheduleSheet) {
+                        ScheduleSessionView(tutor: tutor)
+                    }
+                }
+                .padding(.horizontal)
+            }
+            .padding()
         }
     }
 }
