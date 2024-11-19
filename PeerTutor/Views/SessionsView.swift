@@ -1,5 +1,6 @@
 import SwiftUI
 import FirebaseFirestore
+import EventKit
 
 enum SessionFilter: String, CaseIterable {
     case upcoming, past, requests, all
@@ -502,6 +503,7 @@ struct SessionRow: View {
     let onCancel: (() -> Void)?
     let onReview: () -> Void
     private let firebase = FirebaseManager.shared
+    @State private var showingCalendarAlert = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -544,17 +546,31 @@ struct SessionRow: View {
             
             // Action Buttons
             if session.status == .scheduled {
-                Button(action: {
-                    withAnimation {
-                        onCancel?()
+                VStack(spacing: 8) {
+                    // Add Calendar Button
+                    Button(action: addToCalendar) {
+                        Label("Add to Calendar", systemImage: "calendar.badge.plus")
+                            .font(.subheadline)
+                            .foregroundColor(.blue)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(Color.blue.opacity(0.1))
+                            .cornerRadius(8)
                     }
-                }) {
-                    Label("Cancel Session", systemImage: "xmark.circle")
-                        .foregroundColor(.red)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 8)
-                        .background(Color.red.opacity(0.1))
-                        .cornerRadius(8)
+                    
+                    // Existing Cancel Button
+                    Button(action: {
+                        withAnimation {
+                            onCancel?()
+                        }
+                    }) {
+                        Label("Cancel Session", systemImage: "xmark.circle")
+                            .foregroundColor(.red)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 8)
+                            .background(Color.red.opacity(0.1))
+                            .cornerRadius(8)
+                    }
                 }
             } else if session.status == .completed {
                 if session.hasReview {
@@ -581,7 +597,55 @@ struct SessionRow: View {
         .padding()
         .background(Color(.systemBackground))
         .cornerRadius(12)
-        .shadow(color: Color.black.opacity(0.1), radius: 2, x: 0, y: 1)
+        .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+        .alert("Added to Calendar", isPresented: $showingCalendarAlert) {
+            Button("OK", role: .cancel) { }
+        }
+    }
+    
+    private func addToCalendar() {
+        Task {
+            let eventStore = EKEventStore()
+            
+            // Use the new iOS 17+ API if available, fallback to older version
+            if #available(iOS 17.0, *) {
+                do {
+                    let granted = try await eventStore.requestFullAccessToEvents()
+                    if granted {
+                        await createCalendarEvent(store: eventStore)
+                    }
+                } catch {
+                    print("Error requesting calendar access: \(error.localizedDescription)")
+                }
+            } else {
+                // Fallback for older iOS versions
+                do {
+                    let granted = try await eventStore.requestAccess(to: .event)
+                    if granted {
+                        await createCalendarEvent(store: eventStore)
+                    }
+                } catch {
+                    print("Error requesting calendar access: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+    
+    @MainActor
+    private func createCalendarEvent(store: EKEventStore) {
+        let event = EKEvent(eventStore: store)
+        event.title = "Tutoring Session: \(session.subject)"
+        event.startDate = session.dateTime
+        event.endDate = session.dateTime.addingTimeInterval(TimeInterval(session.duration * 60))
+        event.notes = session.notes
+        event.calendar = store.defaultCalendarForNewEvents
+        
+        do {
+            try store.save(event, span: .thisEvent)
+            showingCalendarAlert = true
+        } catch {
+            print("Error saving event: \(error.localizedDescription)")
+        }
     }
 }
 

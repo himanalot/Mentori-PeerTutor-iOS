@@ -1,5 +1,6 @@
 import SwiftUI
 import FirebaseFirestore
+import EventKit
 
 class DashboardViewModel: ObservableObject {
     @Published var upcomingSessions: [TutoringSession] = []
@@ -144,6 +145,7 @@ struct StatCard: View {
 
 struct DashboardSessionRow: View {
     let session: TutoringSession
+    @State private var showingCalendarAlert = false
     
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
@@ -166,11 +168,70 @@ struct DashboardSessionRow: View {
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }
+            
+            // Add Calendar Button
+            Button(action: addToCalendar) {
+                Label("Add to Calendar", systemImage: "calendar.badge.plus")
+                    .font(.subheadline)
+                    .foregroundColor(.blue)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 8)
+                    .background(Color.blue.opacity(0.1))
+                    .cornerRadius(8)
+            }
         }
         .padding()
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color(.systemBackground))
         .cornerRadius(12)
         .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+        .alert("Added to Calendar", isPresented: $showingCalendarAlert) {
+            Button("OK", role: .cancel) { }
+        }
+    }
+    
+    private func addToCalendar() {
+        Task {
+            let eventStore = EKEventStore()
+            
+            // Use the new iOS 17+ API if available, fallback to older version
+            if #available(iOS 17.0, *) {
+                do {
+                    let granted = try await eventStore.requestFullAccessToEvents()
+                    if granted {
+                        await createCalendarEvent(store: eventStore)
+                    }
+                } catch {
+                    print("Error requesting calendar access: \(error.localizedDescription)")
+                }
+            } else {
+                // Fallback for older iOS versions
+                do {
+                    let granted = try await eventStore.requestAccess(to: .event)
+                    if granted {
+                        await createCalendarEvent(store: eventStore)
+                    }
+                } catch {
+                    print("Error requesting calendar access: \(error.localizedDescription)")
+                }
+            }
+        }
+    }
+    
+    @MainActor
+    private func createCalendarEvent(store: EKEventStore) {
+        let event = EKEvent(eventStore: store)
+        event.title = "Tutoring Session: \(session.subject)"
+        event.startDate = session.dateTime
+        event.endDate = session.dateTime.addingTimeInterval(TimeInterval(session.duration * 60))
+        event.notes = session.notes
+        event.calendar = store.defaultCalendarForNewEvents
+        
+        do {
+            try store.save(event, span: .thisEvent)
+            showingCalendarAlert = true
+        } catch {
+            print("Error saving event: \(error.localizedDescription)")
+        }
     }
 }
