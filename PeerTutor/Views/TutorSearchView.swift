@@ -44,6 +44,24 @@ class TutorSearchViewModel: ObservableObject {
     }
 }
 
+class TutorCalendarViewModel: ObservableObject {
+    @Published var bookedSessions: [TutoringSession] = []
+    private let firebase = FirebaseManager.shared
+    
+    func loadBookedSessions(for tutorId: String) {
+        firebase.firestore.collection("sessions")
+            .whereField("tutorId", isEqualTo: tutorId)
+            .whereField("status", isEqualTo: TutoringSession.SessionStatus.scheduled.rawValue)
+            .addSnapshotListener { [weak self] snapshot, error in
+                guard let documents = snapshot?.documents else { return }
+                
+                self?.bookedSessions = documents.compactMap { document in
+                    try? document.data(as: TutoringSession.self)
+                }
+            }
+    }
+}
+
 struct TutorSearchView: View {
     @StateObject private var viewModel = TutorSearchViewModel()
     @State private var searchText = ""
@@ -298,6 +316,7 @@ struct ScheduleSessionView: View {
     @State private var isCustomSubject = false
     @State private var customSubject = ""
     @State private var showingOverlapAlert = false
+    @State private var showingCalendarView = false
     
     private let firebase = FirebaseManager.shared
     
@@ -330,6 +349,13 @@ struct ScheduleSessionView: View {
                         startTime: $0.startTime,
                         endTime: $0.endTime
                     )}, isCompact: true)
+                    
+                    Button(action: { showingCalendarView = true }) {
+                        Label("View Tutor's Calendar", systemImage: "calendar")
+                    }
+                    .sheet(isPresented: $showingCalendarView) {
+                        TutorCalendarView(tutor: tutor)
+                    }
                 }
                 
                 Section(header: Text("Session Details")) {
@@ -691,6 +717,61 @@ struct TutorProfileView: View {
                 .padding(.horizontal)
             }
             .padding()
+        }
+    }
+}
+
+struct TutorCalendarView: View {
+    let tutor: User
+    @StateObject private var viewModel = TutorCalendarViewModel()
+    @Environment(\.dismiss) private var dismiss
+    
+    var body: some View {
+        NavigationView {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 16) {
+                    Text("Booked Sessions:")
+                        .font(.headline)
+                        .padding(.horizontal)
+                    
+                    ForEach(viewModel.bookedSessions.sorted(by: { $0.dateTime < $1.dateTime })) { session in
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text(session.subject)
+                                .font(.headline)
+                            
+                            HStack {
+                                Image(systemName: "clock")
+                                Text(session.dateTime.formatted(date: .numeric, time: .shortened))
+                                Text("•")
+                                Text("\(session.duration) min")
+                            }
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                        }
+                        .padding()
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .background(Color(.systemBackground))
+                        .cornerRadius(12)
+                        .shadow(color: .black.opacity(0.1), radius: 2, x: 0, y: 1)
+                        .padding(.horizontal)
+                    }
+                    
+                    if viewModel.bookedSessions.isEmpty {
+                        ContentUnavailableView(
+                            "No Booked Sessions",
+                            systemImage: "calendar",
+                            description: Text("The tutor has no scheduled sessions")
+                        )
+                        .padding(.top)
+                    }
+                }
+                .padding(.vertical)
+            }
+            .navigationTitle("Tutor's Calendar")
+            .navigationBarItems(trailing: Button("Done") { dismiss() })
+        }
+        .onAppear {
+            viewModel.loadBookedSessions(for: tutor.id ?? "")
         }
     }
 }
