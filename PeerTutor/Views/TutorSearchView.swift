@@ -350,6 +350,11 @@ struct ScheduleSessionView: View {
                         endTime: $0.endTime
                     )}, isCompact: true)
                     
+                    Text("Times outside these hours will be sent as requests for approval")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                        .padding(.top, 4)
+                    
                     Button(action: { showingCalendarView = true }) {
                         Label("View Tutor's Calendar", systemImage: "calendar")
                     }
