@@ -71,9 +71,21 @@ struct TutorSearchView: View {
             return viewModel.tutors
         }
         return viewModel.tutors.filter { tutor in
-            tutor.name.localizedCaseInsensitiveContains(searchText) ||
-            tutor.subjects.map { $0.name }.joined(separator: " ")
+            // Check if search matches tutor name
+            let nameMatch = tutor.name.localizedCaseInsensitiveContains(searchText)
+            
+            // Check if search matches any subject category
+            let categoryMatch = tutor.subjects.contains { subject in
+                let course = Courses.allCourses.first { $0.name == subject.name }
+                return course?.category.rawValue.localizedCaseInsensitiveContains(searchText) ?? false
+            }
+            
+            // Check if search matches specific subject names
+            let subjectMatch = tutor.subjects.map { $0.name }
+                .joined(separator: " ")
                 .localizedCaseInsensitiveContains(searchText)
+            
+            return nameMatch || categoryMatch || subjectMatch
         }
     }
     
