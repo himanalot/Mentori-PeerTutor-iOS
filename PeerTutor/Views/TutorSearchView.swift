@@ -15,7 +15,6 @@ class TutorSearchViewModel: ObservableObject {
         guard let currentUserId = firebase.auth.currentUser?.uid else { return }
         
         firebase.firestore.collection("users")
-            .whereField("id", isNotEqualTo: currentUserId)
             .addSnapshotListener { [weak self] snapshot, error in
                 guard let documents = snapshot?.documents else {
                     print("Error fetching tutors: \(error?.localizedDescription ?? "Unknown error")")
@@ -24,7 +23,7 @@ class TutorSearchViewModel: ObservableObject {
                 
                 self?.tutors = documents.compactMap { document in
                     try? document.data(as: User.self)
-                }
+                }.filter { $0.id != currentUserId }
             }
     }
     
@@ -33,13 +32,12 @@ class TutorSearchViewModel: ObservableObject {
         guard let currentUserId = firebase.auth.currentUser?.uid else { return }
         
         let snapshot = try? await firebase.firestore.collection("users")
-            .whereField("id", isNotEqualTo: currentUserId)
             .getDocuments()
         
         if let documents = snapshot?.documents {
             self.tutors = documents.compactMap { document in
                 try? document.data(as: User.self)
-            }
+            }.filter { $0.id != currentUserId }
         }
     }
 }
