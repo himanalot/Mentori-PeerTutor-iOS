@@ -36,6 +36,9 @@ struct ContentView: View {
 }
 
 struct MainTabView: View {
+    @StateObject private var messageViewModel = MessageViewModel()
+    @EnvironmentObject private var firebaseManager: FirebaseManager
+    
     var body: some View {
         TabView {
             DashboardView()
@@ -52,17 +55,19 @@ struct MainTabView: View {
                 .tabItem {
                     Label("Messages", systemImage: "message")
                 }
+                .badge(messageViewModel.unreadCount > 0 ? String(messageViewModel.unreadCount) : nil)
             
             SessionsView()
                 .tabItem {
                     Label("Sessions", systemImage: "calendar")
                 }
             
-            ProfileView()
+            MoreView()
                 .tabItem {
-                    Label("Profile", systemImage: "person")
+                    Label("More", systemImage: "ellipsis")
                 }
         }
+        .environmentObject(messageViewModel)
     }
 }
 

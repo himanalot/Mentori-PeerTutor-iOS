@@ -42,6 +42,7 @@ class SessionViewModel: ObservableObject {
                 FirebaseFirestore.Filter.whereField("tutorId", isEqualTo: userId),
                 FirebaseFirestore.Filter.whereField("studentId", isEqualTo: userId)
             ]))
+            .order(by: "dateTime", descending: false)
             .addSnapshotListener { [weak self] snapshot, error in
                 guard let documents = snapshot?.documents else { return }
                 
@@ -54,7 +55,8 @@ class SessionViewModel: ObservableObject {
                         self?.firebase.firestore.collection("sessions")
                             .document(document.documentID)
                             .updateData([
-                                "status": TutoringSession.SessionStatus.completed.rawValue
+                                "status": TutoringSession.SessionStatus.completed.rawValue,
+                                "timestamp": FieldValue.serverTimestamp()
                             ])
                         
                         session?.status = .completed
@@ -220,20 +222,22 @@ class SessionViewModel: ObservableObject {
         let now = Date()
         switch filter {
         case .upcoming:
-            return sessions.filter { $0.dateTime > now && $0.status == .scheduled }
+            return sessions
+                .filter { $0.dateTime > now && $0.status == .scheduled }
+                .sorted { $0.dateTime < $1.dateTime }
         case .past:
-            return sessions.filter { session in 
-                (session.status == .completed || 
-                (session.status == .scheduled && session.dateTime <= now)) 
-            }.sorted { $0.dateTime > $1.dateTime }
+            return sessions
+                .filter { $0.status == .completed || ($0.status == .scheduled && $0.dateTime <= now) }
+                .sorted { $0.dateTime > $1.dateTime }
         case .requests:
-            return [] // Return empty array since requests are handled separately
+            return []
         case .all:
-            let upcoming = sessions.filter { $0.dateTime > now && $0.status == .scheduled }
-            let past = sessions.filter { session in 
-                (session.status == .completed || 
-                (session.status == .scheduled && session.dateTime <= now)) 
-            }.sorted { $0.dateTime > $1.dateTime }
+            let upcoming = sessions
+                .filter { $0.dateTime > now && $0.status == .scheduled }
+                .sorted { $0.dateTime < $1.dateTime }
+            let past = sessions
+                .filter { $0.status == .completed || ($0.status == .scheduled && $0.dateTime <= now) }
+                .sorted { $0.dateTime > $1.dateTime }
             return upcoming + past
         }
     }

@@ -571,14 +571,52 @@ struct ScheduleSessionView: View {
                 dateTime: sessionDateTime,
                 duration: calculateDuration(),
                 status: .scheduled,
-                notes: note.isEmpty ? nil : note
+                notes: note.isEmpty ? nil : note,
+                documentId: nil
             )
             
             do {
-                try firebase.firestore.collection("sessions").addDocument(from: newSession)
-                showingConfirmation = true
+                let db = firebase.firestore
+                let batch = db.batch()
+                
+                // Create the session
+                let sessionRef = db.collection("sessions").document()
+                try batch.setData(from: newSession, forDocument: sessionRef)
+                
+                // Add alert for both parties
+                let tutorAlert = [
+                    "userId": tutorId,
+                    "type": NotificationAlertType.upcomingSession.rawValue,
+                    "message": "New tutoring session scheduled for \(selectedSubject)",
+                    "relatedId": "\(tutorId)_\(currentUserId)",
+                    "timestamp": FieldValue.serverTimestamp(),
+                    "isRead": false
+                ] as [String : Any]
+                
+                let studentAlert = [
+                    "userId": currentUserId,
+                    "type": NotificationAlertType.upcomingSession.rawValue,
+                    "message": "New tutoring session scheduled for \(selectedSubject)",
+                    "relatedId": "\(tutorId)_\(currentUserId)",
+                    "timestamp": FieldValue.serverTimestamp(),
+                    "isRead": false
+                ] as [String : Any]
+                
+                let tutorAlertRef = db.collection("alerts").document()
+                let studentAlertRef = db.collection("alerts").document()
+                batch.setData(tutorAlert, forDocument: tutorAlertRef)
+                batch.setData(studentAlert, forDocument: studentAlertRef)
+                
+                // Commit both operations
+                batch.commit { error in
+                    if let error = error {
+                        print("Error creating session and alert: \(error.localizedDescription)")
+                    } else {
+                        showingConfirmation = true
+                    }
+                }
             } catch {
-                print("Error scheduling session: \(error.localizedDescription)")
+                print("Error creating session: \(error.localizedDescription)")
             }
         }
     }

@@ -1,6 +1,7 @@
 // RequestsView.swift
 import SwiftUI
 import FirebaseFirestore
+import FirebaseFirestoreSwift
 
 enum RequestType {
     case incoming, outgoing
@@ -21,6 +22,7 @@ class RequestsViewModel: ObservableObject {
         guard let requestId = request.documentId else { return }
         
         let db = firebase.firestore
+        let batch = db.batch()
         
         if approved {
             // Create new session
@@ -35,45 +37,51 @@ class RequestsViewModel: ObservableObject {
                 documentId: nil
             )
             
+            // Create alert for student
+            let studentAlert = [
+                "userId": request.studentId,
+                "type": NotificationAlertType.requestAccepted.rawValue,
+                "message": "Your tutoring request for \(request.subject) has been accepted",
+                "relatedId": requestId,
+                "timestamp": FieldValue.serverTimestamp(),
+                "isRead": false
+            ] as [String : Any]
+            
+            let studentAlertRef = db.collection("alerts").document()
+            batch.setData(studentAlert, forDocument: studentAlertRef)
+            
+            // Add session and update request status
             do {
-                // Add session first
-                try db.collection("sessions").addDocument(from: session) { [weak self] error in
-                    if let error = error {
-                        print("Error creating session: \(error.localizedDescription)")
-                        self?.errorMessage = "Failed to create session"
-                        self?.showError = true
-                        return
-                    }
-                    
-                    // Then update request status
-                    db.collection("requests").document(requestId).updateData([
-                        "status": TutoringRequest.RequestStatus.approved.rawValue
-                    ]) { error in
-                        if let error = error {
-                            print("Error updating request status: \(error.localizedDescription)")
-                        }
-                    }
-                }
+                let sessionRef = db.collection("sessions").document()
+                try batch.setData(from: session, forDocument: sessionRef)
+                batch.updateData(["status": TutoringRequest.RequestStatus.approved.rawValue], forDocument: db.collection("requests").document(requestId))
             } catch {
-                print("Error creating session: \(error.localizedDescription)")
-                self.errorMessage = "Failed to create session"
-                self.showError = true
+                print("Error encoding session: \(error)")
+                return
             }
         } else {
-            // For decline, update the status
-            db.collection("requests").document(requestId).updateData([
-                "status": TutoringRequest.RequestStatus.declined.rawValue,
-                "updatedAt": Timestamp(date: Date())
-            ]) { [weak self] error in
-                if let error = error {
-                    print("Error declining request: \(error.localizedDescription)")
-                    DispatchQueue.main.async {
-                        self?.errorMessage = "Failed to decline request"
-                        self?.showError = true
-                    }
-                }
-            }
+            // Create decline alert for student
+            let studentAlert = [
+                "userId": request.studentId,
+                "type": NotificationAlertType.requestDeclined.rawValue,
+                "message": "Your tutoring request for \(request.subject) has been declined",
+                "relatedId": requestId,
+                "timestamp": FieldValue.serverTimestamp(),
+                "isRead": false
+            ] as [String : Any]
+            
+            let studentAlertRef = db.collection("alerts").document()
+            batch.setData(studentAlert, forDocument: studentAlertRef)
+            
+            // Update request status
+            batch.updateData(
+                ["status": TutoringRequest.RequestStatus.declined.rawValue],
+                forDocument: db.collection("requests").document(requestId)
+            )
         }
+        
+        // Commit all changes
+        batch.commit()
     }
     
     private func listenForRequests() {
