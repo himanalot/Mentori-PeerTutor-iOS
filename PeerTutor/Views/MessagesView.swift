@@ -35,12 +35,22 @@ struct MessagesView: View {
     
     var body: some View {
         NavigationView {
-            List {
-                ForEach(viewModel.messages) { message in
-                    Button {
-                        selectedMessage = message
-                    } label: {
-                        MessageRow(message: message)
+            Group {
+                if viewModel.messages.isEmpty {
+                    ContentUnavailableView(
+                        "No Messages",
+                        systemImage: "message.fill",
+                        description: Text("You don't have any active conversations")
+                    )
+                } else {
+                    List {
+                        ForEach(viewModel.messages) { message in
+                            Button {
+                                selectedMessage = message
+                            } label: {
+                                MessageRow(message: message)
+                            }
+                        }
                     }
                 }
             }
