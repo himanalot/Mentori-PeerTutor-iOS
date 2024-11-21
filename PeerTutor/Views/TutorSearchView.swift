@@ -50,7 +50,10 @@ class TutorCalendarViewModel: ObservableObject {
     
     func loadBookedSessions(for tutorId: String) {
         firebase.firestore.collection("sessions")
-            .whereField("tutorId", isEqualTo: tutorId)
+            .whereFilter(FirebaseFirestore.Filter.orFilter([
+                FirebaseFirestore.Filter.whereField("tutorId", isEqualTo: tutorId),
+                FirebaseFirestore.Filter.whereField("studentId", isEqualTo: tutorId)
+            ]))
             .whereField("status", isEqualTo: TutoringSession.SessionStatus.scheduled.rawValue)
             .addSnapshotListener { [weak self] snapshot, error in
                 guard let documents = snapshot?.documents else { return }
