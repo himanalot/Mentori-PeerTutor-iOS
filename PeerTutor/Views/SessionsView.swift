@@ -1,6 +1,7 @@
 import SwiftUI
 import FirebaseFirestore
 import EventKit
+import FirebaseFirestoreSwift
 
 enum SessionFilter: String, CaseIterable {
     case upcoming, past, requests, all
@@ -24,7 +25,6 @@ class SessionViewModel: ObservableObject {
         let now = Date()
         return sessions.filter { session in
             session.status == .completed ||
-            session.status == .cancelled ||
             (session.status == .scheduled && session.dateTime <= now)
         }.sorted { $0.dateTime > $1.dateTime }
     }
@@ -222,11 +222,19 @@ class SessionViewModel: ObservableObject {
         case .upcoming:
             return sessions.filter { $0.dateTime > now && $0.status == .scheduled }
         case .past:
-            return sessions.filter { $0.dateTime <= now || $0.status == .cancelled || $0.status == .completed }
+            return sessions.filter { session in 
+                (session.status == .completed || 
+                (session.status == .scheduled && session.dateTime <= now)) 
+            }.sorted { $0.dateTime > $1.dateTime }
         case .requests:
             return [] // Return empty array since requests are handled separately
         case .all:
-            return sessions
+            let upcoming = sessions.filter { $0.dateTime > now && $0.status == .scheduled }
+            let past = sessions.filter { session in 
+                (session.status == .completed || 
+                (session.status == .scheduled && session.dateTime <= now)) 
+            }.sorted { $0.dateTime > $1.dateTime }
+            return upcoming + past
         }
     }
     
