@@ -69,11 +69,14 @@ class SessionViewModel: ObservableObject {
     
     private func listenForRequests() {
         guard let userId = firebase.auth.currentUser?.uid else { return }
+        let now = Timestamp(date: Date())
         
         // Listen for incoming requests (as tutor)
         firebase.firestore.collection("requests")
             .whereField("tutorId", isEqualTo: userId)
             .whereField("status", isEqualTo: TutoringRequest.RequestStatus.pending.rawValue)
+            .whereField("dateTime", isGreaterThan: now)
+            .order(by: "dateTime", descending: false)
             .addSnapshotListener { [weak self] snapshot, error in
                 guard let documents = snapshot?.documents else { return }
                 self?.incomingRequests = documents.compactMap { document in
@@ -87,6 +90,8 @@ class SessionViewModel: ObservableObject {
         firebase.firestore.collection("requests")
             .whereField("studentId", isEqualTo: userId)
             .whereField("status", isEqualTo: TutoringRequest.RequestStatus.pending.rawValue)
+            .whereField("dateTime", isGreaterThan: now)
+            .order(by: "dateTime", descending: false)
             .addSnapshotListener { [weak self] snapshot, error in
                 guard let documents = snapshot?.documents else { return }
                 self?.outgoingRequests = documents.compactMap { document in
@@ -265,10 +270,14 @@ class SessionViewModel: ObservableObject {
     @MainActor
     func refreshRequests() async {
         guard let userId = firebase.auth.currentUser?.uid else { return }
+        let now = Timestamp(date: Date())
         
+        // Refresh incoming requests
         let snapshot = try? await firebase.firestore.collection("requests")
             .whereField("tutorId", isEqualTo: userId)
             .whereField("status", isEqualTo: TutoringRequest.RequestStatus.pending.rawValue)
+            .whereField("dateTime", isGreaterThan: now)
+            .order(by: "dateTime", descending: false)
             .getDocuments()
         
         if let documents = snapshot?.documents {
@@ -279,9 +288,12 @@ class SessionViewModel: ObservableObject {
             }
         }
         
+        // Refresh outgoing requests
         let snapshotOutgoing = try? await firebase.firestore.collection("requests")
             .whereField("studentId", isEqualTo: userId)
             .whereField("status", isEqualTo: TutoringRequest.RequestStatus.pending.rawValue)
+            .whereField("dateTime", isGreaterThan: now)
+            .order(by: "dateTime", descending: false)
             .getDocuments()
         
         if let documents = snapshotOutgoing?.documents {
